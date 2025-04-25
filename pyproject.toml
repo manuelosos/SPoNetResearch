@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "sponetresearch"
+version = "0.1.0"
+description = ""
+authors = ["Manuel E. Urban"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+sponet = "^2.6.3"
+seaborn = "==0.13.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
