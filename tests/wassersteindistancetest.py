@@ -6,9 +6,19 @@ from sponet.collective_variables import OpinionShares
 from sponet import sample_many_runs, CNVM, CNVMParameters, sample_cle
 import scipy as sp
 import matplotlib.pyplot as plt
-import seaborn as sns
 from utils.network_utils import *
+import json
+import os
+import argparse
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--test", action="store_true")
+
+
+
+with open("paths.json") as file:
+    data = json.load(file)
+data_path = data["data_path"]
 
 
 def compare_wasserstein(
@@ -22,6 +32,7 @@ def compare_wasserstein(
 ):
 
     n_states = params.num_opinions
+    n_nodes = params.num_agents
 
     cv = OpinionShares(n_states, normalize=True)
 
@@ -56,15 +67,15 @@ def compare_wasserstein(
 
     for m in range(n_states):
         for i in range(len(t_sde)):
+
             ws_distances[i,m] = sp.stats.wasserstein_distance(x_ref[0,:,i,m], x_sde[:,i,m])
 
     return ws_distances
 
 
-def simpletest():
 
-    p = 0.5
-    #n_nodes=1000
+def simpletest(test=False):
+
 
     R = np.array([[0, .8, .2],
                   [.2, 0, .9],
@@ -74,12 +85,18 @@ def simpletest():
                           [.7, 0, .9],
                           [.9, .7, 0]])
     n_states = R.shape[0]
-    t_max = 50
-    n_runs = 10000
+
+    if test:
+        t_max = 10
+        n_runs = 10
+        n_nodes_list = [10]
+    else:
+        t_max = 100
+        n_runs = 1000000
+        n_nodes_list = [10, 100, 1000, 10000, 100000, 1000000]
 
     errs = []
 
-    n_nodes_list = [10, 100, 1000, 10000, 100000, 1000000]
     for n_nodes in n_nodes_list:
         x_init_shares, x_init_network = (
             create_equal_network_init_and_shares([.2, .5, .3], n_nodes))
@@ -92,11 +109,18 @@ def simpletest():
         diffs = compare_wasserstein(params, x_init_network, n_runs, t_max, verbose=True)
         errs.append(diffs)
 
+        if test:
+            plt.plot(diffs)
+            plt.show()
 
-    np.savez(f"wasserstein_errs_{n_runs}nr.npy",
-             errs=np.array(errs),
-             n_nodes_list=n_nodes_list)
 
+    if not test:
+        save_path = os.path.join(data_path, "ws_distance")
+        np.savez(os.path.join(save_path, f"wasserstein_errs_{n_runs}nr.npy"),
+                 errs=np.array(errs),
+                 n_nodes_list=n_nodes_list)
+
+    return
 
 
 
@@ -104,7 +128,12 @@ def simpletest():
 
 def main():
 
-    simpletest()
+
+    args = parser.parse_args()
+    test: bool = args.test
+
+    if test:
+        simpletest(test=True)
 
     return
 
