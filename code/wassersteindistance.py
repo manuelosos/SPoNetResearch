@@ -114,11 +114,11 @@ def simpletest(test=False):
             plt.show()
 
 
-    if not test:
-        save_path = os.path.join(data_path, "ws_distance")
-        np.savez(os.path.join(save_path, f"wasserstein_errs_{n_runs}nr.npy"),
-                 errs=np.array(errs),
-                 n_nodes_list=n_nodes_list)
+
+    save_path = os.path.join(data_path, "ws_distance")
+    np.savez(os.path.join(save_path, f"wasserstein_errs_{n_runs}s.npy"),
+             errs=np.array(errs),
+             n_nodes_list=n_nodes_list)
 
     return
 
