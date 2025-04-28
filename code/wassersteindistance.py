@@ -91,7 +91,7 @@ def simpletest(test=False):
         n_runs = 10
         n_nodes_list = [10]
     else:
-        t_max = 100
+        t_max = 50
         n_runs = 1000000
         n_nodes_list = [10, 100, 1000, 10000, 100000, 1000000]
 
@@ -134,6 +134,9 @@ def main():
 
     if test:
         simpletest(test=True)
+        return
+
+    simpletest(test=False)
 
     return
 
