@@ -116,7 +116,7 @@ def simpletest(test=False):
 
 
     save_path = os.path.join(data_path, "ws_distance")
-    np.savez(os.path.join(save_path, f"wasserstein_errs_{n_runs}s.npy"),
+    np.savez(os.path.join(save_path, f"wasserstein_errs_{n_runs}s"),
              errs=np.array(errs),
              n_nodes_list=n_nodes_list)
 
