@@ -3,7 +3,7 @@
 #SBATCH --time=6:00:00
 #SBATCH --mail-type=BEGIN,FAIL,END
 #SBATCH --mail-user=manuel.urban@uni-bayreuth.de
-#SBATCH --chdir=/workdir/bt310056/SPoNetResearch
+#SBATCH --chdir=/workdir/bt310056/SPoNetResearch/code
 #SBATCH --error=/workdir/bt310056/logs/%x_%j.err #Fehlerausgabedatei %x:= jobname,%j:=jobid
 #SBATCH --output=/workdir/bt310056/logs/%x_%j.out
 
