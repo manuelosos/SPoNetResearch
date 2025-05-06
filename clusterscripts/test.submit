@@ -9,4 +9,4 @@
 
 #SBATCH --ntasks=64
 module load gnu/14.1 python/3.12.4
-python3 tests/wassersteindistancetest.py --test
+python3 wassersteindistancetest.py --test
