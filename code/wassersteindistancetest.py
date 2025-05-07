@@ -11,9 +11,11 @@ import json
 import os
 import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--test", action="store_true")
-
+parser = argparse.ArgumentParser(
+    description="This script tests the convergence rate of the Diffusion approximation to a CNVM "
+                "with respect to the Wasserstein distance."
+)
+parser.add_argument("--test", action="store_true", help="Set to test the script")
 
 
 with open("paths.json") as file:
@@ -74,7 +76,7 @@ def compare_wasserstein(
 
 
 
-def simpletest(test=False):
+def convergencetest(test=False):
 
 
     R = np.array([[0, .8, .2],
@@ -115,11 +117,12 @@ def simpletest(test=False):
 
 
 
-    save_path = os.path.join(data_path, "ws_distance")
-    np.savez(os.path.join(save_path, f"wasserstein_errs_{n_runs}s"),
-             errs=np.array(errs),
-             n_nodes_list=n_nodes_list)
-
+        save_path = os.path.join(data_path, "ws_distance")
+        np.savez(os.path.join(save_path, f"wasserstein_errs_{n_runs}s"),
+                errs=np.array(errs),
+                n_nodes_list=n_nodes_list
+                )
+        print(f"{n_nodes} done")
     return
 
 
@@ -133,10 +136,10 @@ def main():
     test: bool = args.test
 
     if test:
-        simpletest(test=True)
+        convergencetest(test=True)
         return
 
-    simpletest(test=False)
+    convergencetest(test=False)
 
     return
 

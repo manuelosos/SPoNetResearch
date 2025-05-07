@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=wasserstein_convergence
-#SBATCH --time=6:00:00
+#SBATCH --time=20:00:00
 #SBATCH --mail-type=BEGIN,FAIL,END
 #SBATCH --mail-user=manuel.urban@uni-bayreuth.de
 #SBATCH --chdir=/workdir/bt310056/SPoNetResearch/code/
