@@ -94,7 +94,7 @@ def convergencetest(test=False):
         n_nodes_list = [10]
     else:
         t_max = 50
-        n_runs = 1000000
+        n_runs = 100000
         n_nodes_list = [10, 100, 1000, 10000, 100000, 1000000]
 
     errs = []
