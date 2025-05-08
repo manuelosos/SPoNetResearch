@@ -1,7 +1,6 @@
 import argparse
 import json
 import numpy as np
-from sponet import sample_moments
 
 parser = argparse.ArgumentParser(
     description="Test for the convergence rate of moments."

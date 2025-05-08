@@ -1,5 +1,7 @@
 import sponet
+import logging
 import numpy as np
+from logging import log
 import sponet
 from sponet.network_generator import ErdosRenyiGenerator
 from sponet.collective_variables import OpinionShares
@@ -11,16 +13,26 @@ import json
 import os
 import argparse
 
+
+with open("paths.json") as file:
+    data = json.load(file)
+
+data_path = data.get("data_path", "")
+logging_path = data.get("logging_path", "")
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler(os.path.join(logging_path,"wasserstein.log"))
+formatter = logging.Formatter('%(asctime)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
 parser = argparse.ArgumentParser(
     description="This script tests the convergence rate of the Diffusion approximation to a CNVM "
                 "with respect to the Wasserstein distance."
 )
 parser.add_argument("--test", action="store_true", help="Set to test the script")
-
-
-with open("paths.json") as file:
-    data = json.load(file)
-data_path = data["data_path"]
 
 
 def compare_wasserstein(
@@ -40,7 +52,7 @@ def compare_wasserstein(
 
     x_init_shares = cv(np.array([x_init_network]))
 
-
+    logger.info(f"Started SSA with {n_runs} on {n_nodes} nodes" )
     if verbose: print("Starting SSA simulation...")
     t_ref,x_ref = sample_many_runs(
         params,
@@ -50,9 +62,10 @@ def compare_wasserstein(
         n_runs,
         collective_variable=cv
     )
+
     if verbose: print("Finished SSA simulation.\n"
                       "Starting SDE simulation.")
-
+    logger.info(f"Started SDE {n_runs} SDE runs")
     t_sde, x_sde = sample_cle(
         params,
         initial_state=x_init_shares[0],
@@ -64,6 +77,8 @@ def compare_wasserstein(
     if verbose: print("Finished SDE simulation.")
 
     assert len(t_ref) == len(t_sde)
+
+    logger.info(f"Starting computing Wasserstein distances for {n_nodes} nodes for {t_max} t_max")
 
     ws_distances = np.zeros((len(t_ref), n_states))
 
@@ -123,6 +138,7 @@ def convergencetest(test=False):
                 n_nodes_list=n_nodes_list
                 )
         print(f"{n_nodes} done")
+        logger.info(f"Wasserstein run for {n_nodes} nodes and {n_runs} runs done.")
     return
 
 
