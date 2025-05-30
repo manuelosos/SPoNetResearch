@@ -1,3 +1,5 @@
+from typing import List
+
 import sponet
 import logging
 import numpy as np
@@ -6,9 +8,8 @@ import sponet
 from sponet.network_generator import ErdosRenyiGenerator
 from sponet.collective_variables import OpinionShares
 from sponet import sample_many_runs, CNVM, CNVMParameters, sample_cle
-from network_utils import *
+from .network_utils import *
 import os
-
 
 def get_batches(n_total_runs: int, batchsize: int):
 
@@ -32,11 +33,12 @@ def compute_mjp_sde_runs(
 		simulation_resolution_sde = 20,
 		batchsize_sde = 10000,
 		batchsize_mjp = 1000,
-		save_path_batch: None | str = None,
+		save_path_batch: str = "",
 		verbose = True
-):
+) -> Tuple[List[str], List[str]]:
 	"""
 	Computes trajectories of a Markov jump process on a network and the corresponding diffusion approximation.
+	:rtype Tuple[List[str], List[str]]
 	:param params:
 		CNVM parameters for the jump process model.
 	:param x_init_network:
@@ -76,7 +78,7 @@ def compute_mjp_sde_runs(
 
 		path_batch = os.path.join(save_path_batch, f"batch_{i}_mjp.npz")
 		paths_batches_mjp.append(path_batch)
-		np.savez_compressed(path_batch, t=t, x=x)
+		np.savez_compressed(path_batch, t=t, x=x[0])
 
 		if verbose:
 			print(f"Finished batch {i} with {n_runs} runs of MJP simulation.")

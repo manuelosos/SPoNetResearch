@@ -1,4 +1,5 @@
 import sponet
+import datetime
 import logging
 import numpy as np
 from logging import log
@@ -9,24 +10,28 @@ from sponet import sample_many_runs, CNVM, CNVMParameters, sample_cle
 import scipy as sp
 import matplotlib.pyplot as plt
 from utils.network_utils import *
+from utils.parameter_utils import *
+from utils.computation_utils import *
 import json
 import os
 import argparse
 
 # Load file containing all relevant paths for file saving and loading
 with open("paths.json") as file:
-    data = json.load(file)
+    path_data = json.load(file)
 
-data_path = data.get("data_path", "")
-logging_path = data.get("logging_path", "")
+data_path = path_data.get("data_path", "")
+path_tmp_save = path_data.get("path_tmp_save", "")
+save_path_results = path_data.get("save_path_results", "")
+logging_path = path_data.get("logging_path", "")
 
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(os.path.join(logging_path, "wasserstein.log"))
-formatter = logging.Formatter('%(asctime)s - %(message)s')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
+# file_handler = logging.FileHandler(os.path.join(logging_path, "wasserstein.log"))
+# formatter = logging.Formatter('%(asctime)s - %(message)s')
+# file_handler.setFormatter(formatter)
+# logger.addHandler(file_handler)
 
 parser = argparse.ArgumentParser(
     description="This script tests the convergence rate of the Diffusion approximation to a CNVM "
@@ -35,98 +40,88 @@ parser = argparse.ArgumentParser(
 parser.add_argument("--test", action="store_true", help="Set to test the script")
 
 
-def run_wasserstein_test():
+
+def load_batches(paths_batches: List[str]) -> np.ndarray:
+
+    res = np.load(paths_batches[0])["x"]
+
+    for path_batch in paths_batches[1:]:
+        res = np.concatenate((res, np.load(path_batch)["x"]), axis=0)
+    return res
 
 
-    return
-
-
-def compare_wasserstein(
-        params,
-        x_init_network,
-        n_runs,
-        t_max,
-        save_resolution = 2,
-        simulation_resolution_sde = 20,
-        verbose = False
+def run_wasserstein_test(
+        n_nodes: int,
+        n_runs_sde: int,
+        n_runs_mjp: int,
+        batchsize_mjp: int,
+        batchsize_sde: int,
+        t_max: int,
+        save_path: str = ""
 ):
-    """
-    Computes the trajectories of the Markov jump process on network and the corresponding diffusion approximation
-    and computes the wasserstein distance.
-    :param params:
-    :param x_init_network:
-    :param n_runs:
-    :param t_max:
-    :param save_resolution:
-    :param simulation_resolution_sde:
-    :param verbose:
-    :return:
-    """
 
 
+    network_gen = sponet.network_generator.ErdosRenyiGenerator(n_nodes, 0.9)
+    params, initial_rel_shares, name_rate_type = cnvm_3s_asymm(network_gen)
 
-    ws_distances = np.zeros((len(t_ref), n_states))
-
-    for m in range(n_states):
-        for i in range(len(t_sde)):
-            ws_distances[i, m] = sp.stats.wasserstein_distance(x_ref[0, :, i, m], x_sde[:, i, m])
-
-    return ws_distances
+    initial_rel_shares, network_init = (
+        create_equal_network_init_and_shares(initial_rel_shares, n_nodes))
 
 
-
-def convergencetest(test=False):
-
-
-    R = np.array([[0, .8, .2],
-                  [.2, 0, .9],
-                  [.8, .3, 0]])
-
-    Rt = 0.01 * np.array([[0, .9, .8],
-                          [.7, 0, .9],
-                          [.9, .7, 0]])
-    n_states = R.shape[0]
-
-    if test:
-        t_max = 10
-        n_runs = 10
-        n_nodes_list = [10]
-    else:
-        t_max = 50
-        n_runs = 100000
-        n_nodes_list = [10, 100, 1000, 10000, 100000]
-
-    errs = []
-
-    for n_nodes in n_nodes_list:
-        x_init_shares, x_init_network = (
-            create_equal_network_init_and_shares([.2, .5, .3], n_nodes))
-
-        params = CNVMParameters(num_opinions=n_states,
-                                num_agents=n_nodes,
-                                r=R,
-                                r_tilde=Rt,
-                                alpha=1)
-        diffs = compare_wasserstein(params, x_init_network, n_runs, t_max, verbose=True)
-        errs.append(diffs)
-
-        if test:
-            plt.plot(diffs)
-            plt.show()
+    paths_batches_mjp, paths_batches_sde = compute_mjp_sde_runs(
+        params=params,
+        x_init_network=network_init,
+        n_runs_sde=n_runs_sde,
+        n_runs_mjp=n_runs_mjp,
+        t_max=t_max,
+        save_resolution=2,
+        simulation_resolution_sde=20,
+        batchsize_sde = batchsize_sde,
+        batchsize_mjp = batchsize_mjp,
+        save_path_batch=path_tmp_save
+    )
 
 
+    wasserstein_distances = compute_wasserstein_distance_from_batches(paths_batches_mjp, paths_batches_sde)
 
-        save_path = os.path.join(data_path, "ws_distance")
-        np.savez(os.path.join(save_path, f"wasserstein_errs_{n_runs}s"),
-                errs=np.array(errs),
-                n_nodes_list=n_nodes_list
-                )
-        print(f"{n_nodes} done")
-        logger.info(f"Wasserstein run for {n_nodes} nodes and {n_runs} runs done.")
+    run_name = f"ws_dist_{name_rate_type}_{n_nodes}n_{network_gen.abrv()}"
+    path_save_dir = os.path.join(save_path, run_name)
+
+    os.mkdir(path_save_dir)
+    np.save(os.path.join(path_save_dir, run_name), wasserstein_distances)
+    with open(os.path.join(path_save_dir, run_name + ".txt"), "w") as f:
+        f.write(str(params))
+        f.write("\n")
+        f.write(datetime.datetime.now().isoformat())
+
     return
 
 
+def compute_wasserstein_distance_from_batches(
+        paths_batches_mjp: List[str],
+        paths_batches_sde: List[str],
+        verbose=False
+):
 
+    trajectories_mjp = load_batches(paths_batches_mjp)
+    trajectories_sde = load_batches(paths_batches_sde)
+
+    n_time_steps = trajectories_mjp.shape[1]
+    n_states = trajectories_mjp.shape[2]
+
+    distances_wasserstein = np.empty((n_time_steps, n_states))
+
+    for time_step in range(n_time_steps):
+        for state in range(n_states):
+
+            distances_wasserstein[time_step, state] = (
+                sp.stats.wasserstein_distance(
+                    trajectories_mjp[:, time_step, state],
+                    trajectories_sde[:, time_step, state]
+                )
+            )
+
+    return distances_wasserstein
 
 
 def main():
@@ -136,11 +131,14 @@ def main():
     test: bool = args.test
 
     if test:
-        convergencetest(test=True)
-        return
-
-    convergencetest(test=False)
-
+        run_wasserstein_test(
+            n_nodes=100,
+            n_runs_mjp=100,
+            n_runs_sde=100,
+            batchsize_mjp=1000,
+            batchsize_sde=1000,
+            t_max=10
+        )
     return
 
 

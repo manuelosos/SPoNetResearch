@@ -1,6 +1,11 @@
+from typing import Tuple
+
 import numpy as np
 from sponet.collective_variables import OpinionShares
+from sponet.network_generator import NetworkGenerator
 from numba import njit, prange
+import os
+
 
 def create_network_init(shares, n_nodes):
 
@@ -19,26 +24,37 @@ def create_network_init(shares, n_nodes):
     return x_init
 
 
-def create_equal_network_init_and_shares(shares, n_nodes):
+def create_equal_network_init_and_shares(
+        shares: np.ndarray,
+        n_nodes: int
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Creates a network state with shares as close as possible to the proposed shares.
-    The shares are then updated accordingly to ensure equal initial condiitions if one
+    The shares are then updated accordingly to ensure equal initial conditions if one
     tests CLE against network process.
+    :rtype: Tuple[np.ndarray, np.ndarray]
     :param shares:
         Shares of the state
     :param n_nodes:
         Number of nodes of the network
-    :return:
-        Tuple[np.array, np.array]
     """
 
-
     n_states = len(shares)
-    cv = OpinionShares(n_states)
+    cv = OpinionShares(n_states, normalize=True)
     network_state = create_network_init(shares, n_nodes)
     shares = cv(np.array([network_state]))
 
     return shares, network_state
+
+
+def pre_generate_network(
+    network_gen: NetworkGenerator,
+    save_path: str
+):
+
+    network = network_gen()
+
+    return
 
 
 @njit(parallel=True, cache=True)
