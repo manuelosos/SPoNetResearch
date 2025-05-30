@@ -13,7 +13,7 @@ import json
 import os
 import argparse
 
-
+# Load file containing all relevant paths for file saving and loading
 with open("paths.json") as file:
     data = json.load(file)
 
@@ -23,7 +23,7 @@ logging_path = data.get("logging_path", "")
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(os.path.join(logging_path,"wasserstein.log"))
+file_handler = logging.FileHandler(os.path.join(logging_path, "wasserstein.log"))
 formatter = logging.Formatter('%(asctime)s - %(message)s')
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
@@ -35,6 +35,12 @@ parser = argparse.ArgumentParser(
 parser.add_argument("--test", action="store_true", help="Set to test the script")
 
 
+def run_wasserstein_test():
+
+
+    return
+
+
 def compare_wasserstein(
         params,
         x_init_network,
@@ -44,48 +50,26 @@ def compare_wasserstein(
         simulation_resolution_sde = 20,
         verbose = False
 ):
+    """
+    Computes the trajectories of the Markov jump process on network and the corresponding diffusion approximation
+    and computes the wasserstein distance.
+    :param params:
+    :param x_init_network:
+    :param n_runs:
+    :param t_max:
+    :param save_resolution:
+    :param simulation_resolution_sde:
+    :param verbose:
+    :return:
+    """
 
-    n_states = params.num_opinions
-    n_nodes = params.num_agents
 
-    cv = OpinionShares(n_states, normalize=True)
-
-    x_init_shares = cv(np.array([x_init_network]))
-
-    logger.info(f"Started SSA with {n_runs} on {n_nodes} nodes" )
-    if verbose: print("Starting SSA simulation...")
-    t_ref,x_ref = sample_many_runs(
-        params,
-        np.array([x_init_network]),
-        t_max,
-        save_resolution*t_max+1,
-        n_runs,
-        collective_variable=cv
-    )
-
-    if verbose: print("Finished SSA simulation.\n"
-                      "Starting SDE simulation.")
-    logger.info(f"Started SDE {n_runs} SDE runs")
-    t_sde, x_sde = sample_cle(
-        params,
-        initial_state=x_init_shares[0],
-        max_time = t_max,
-        num_time_steps=t_max*simulation_resolution_sde*save_resolution,
-        num_samples=n_runs,
-        saving_offset=simulation_resolution_sde
-    )
-    if verbose: print("Finished SDE simulation.")
-
-    assert len(t_ref) == len(t_sde)
-
-    logger.info(f"Starting computing Wasserstein distances for {n_nodes} nodes for {t_max} t_max")
 
     ws_distances = np.zeros((len(t_ref), n_states))
 
     for m in range(n_states):
         for i in range(len(t_sde)):
-
-            ws_distances[i,m] = sp.stats.wasserstein_distance(x_ref[0,:,i,m], x_sde[:,i,m])
+            ws_distances[i, m] = sp.stats.wasserstein_distance(x_ref[0, :, i, m], x_sde[:, i, m])
 
     return ws_distances
 

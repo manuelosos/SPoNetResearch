@@ -23,7 +23,7 @@ def plot_wasserstein_distance_vs_network_size(
     for i, n_nodes in enumerate(node_list):
         plot_err[i] = np.max(errs[i,:,ref_state])
 
-    error_bound = np.log(node_list)/np.sqrt(node_list)
+    error_bound = np.log(node_list)/node_list
 
     fig, ax = plt.subplots()
 

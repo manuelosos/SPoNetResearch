@@ -28,7 +28,7 @@ def main(test = False):
 
     if test:
         t_max = 10
-        n_runs = 10
+        n_runs = 10<
         n_nodes_list = [10]
     else:
         t_max = 50
