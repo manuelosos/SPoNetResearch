@@ -1,15 +1,8 @@
-import sponet
 import datetime
-import logging
+
 import numpy as np
-from logging import log
-import sponet
 from sponet.network_generator import ErdosRenyiGenerator
-from sponet.collective_variables import OpinionShares
-from sponet import sample_many_runs, CNVM, CNVMParameters, sample_cle
 import scipy as sp
-import matplotlib.pyplot as plt
-from utils.network_utils import *
 from utils.parameter_utils import *
 from utils.computation_utils import *
 import json
@@ -33,68 +26,23 @@ logging_path = path_data.get("logging_path", "")
 # file_handler.setFormatter(formatter)
 # logger.addHandler(file_handler)
 
+# Command Line Arguments ###############################################################################################
 parser = argparse.ArgumentParser(
-    description="This script tests the convergence rate of the Diffusion approximation to a CNVM "
+    description="This script tests the convergence rate of the diffusion approximation to a CNVM "
                 "with respect to the Wasserstein distance."
 )
 parser.add_argument("--test", action="store_true", help="Set to test the script")
 
 
 
-def load_batches(paths_batches: List[str]) -> np.ndarray:
+def load_batches(paths_batches: List[str]) -> Tuple[np.ndarray, np.ndarray]:
 
     res = np.load(paths_batches[0])["x"]
+    t = np.load(paths_batches[0])["t"]
 
     for path_batch in paths_batches[1:]:
         res = np.concatenate((res, np.load(path_batch)["x"]), axis=0)
-    return res
-
-
-def run_wasserstein_test(
-        n_nodes: int,
-        n_runs_sde: int,
-        n_runs_mjp: int,
-        batchsize_mjp: int,
-        batchsize_sde: int,
-        t_max: int,
-        save_path: str = ""
-):
-
-
-    network_gen = sponet.network_generator.ErdosRenyiGenerator(n_nodes, 0.9)
-    params, initial_rel_shares, name_rate_type = cnvm_3s_asymm(network_gen)
-
-    initial_rel_shares, network_init = (
-        create_equal_network_init_and_shares(initial_rel_shares, n_nodes))
-
-
-    paths_batches_mjp, paths_batches_sde = compute_mjp_sde_runs(
-        params=params,
-        x_init_network=network_init,
-        n_runs_sde=n_runs_sde,
-        n_runs_mjp=n_runs_mjp,
-        t_max=t_max,
-        save_resolution=2,
-        simulation_resolution_sde=20,
-        batchsize_sde = batchsize_sde,
-        batchsize_mjp = batchsize_mjp,
-        save_path_batch=path_tmp_save
-    )
-
-
-    wasserstein_distances = compute_wasserstein_distance_from_batches(paths_batches_mjp, paths_batches_sde)
-
-    run_name = f"ws_dist_{name_rate_type}_{n_nodes}n_{network_gen.abrv()}"
-    path_save_dir = os.path.join(save_path, run_name)
-
-    os.mkdir(path_save_dir)
-    np.save(os.path.join(path_save_dir, run_name), wasserstein_distances)
-    with open(os.path.join(path_save_dir, run_name + ".txt"), "w") as f:
-        f.write(str(params))
-        f.write("\n")
-        f.write(datetime.datetime.now().isoformat())
-
-    return
+    return t, res
 
 
 def compute_wasserstein_distance_from_batches(
@@ -103,13 +51,16 @@ def compute_wasserstein_distance_from_batches(
         verbose=False
 ):
 
-    trajectories_mjp = load_batches(paths_batches_mjp)
-    trajectories_sde = load_batches(paths_batches_sde)
+    t, trajectories_mjp = load_batches(paths_batches_mjp)
+    t, trajectories_sde = load_batches(paths_batches_sde)
 
     n_time_steps = trajectories_mjp.shape[1]
     n_states = trajectories_mjp.shape[2]
 
     distances_wasserstein = np.empty((n_time_steps, n_states))
+
+    if verbose:
+        print("Starting Wasserstein distance computation...")
 
     for time_step in range(n_time_steps):
         for state in range(n_states):
@@ -120,8 +71,98 @@ def compute_wasserstein_distance_from_batches(
                     trajectories_sde[:, time_step, state]
                 )
             )
+    if verbose:
+        print("Wasserstein distance computation complete.")
 
-    return distances_wasserstein
+    return t, distances_wasserstein
+
+
+def run_wasserstein_test(
+        n_nodes: int,
+        edge_density: float,
+        n_states: int,
+        rate_type: str,
+        n_runs_mjp: int,
+        n_runs_sde: int,
+        batchsize_mjp: int,
+        batchsize_sde: int,
+        t_max: int,
+        save_path: str = "",
+        save_resolution=2,
+        simulation_resolution_sde=20,
+        network_save_path: str | None = None
+):
+
+    # Parameter Initialization
+    network_params = {"n_nodes": n_nodes, "edge_density": edge_density, "network_save_path": network_save_path}
+    parameter_generator = get_parameter_generator(rate_type, n_states)
+    params, initial_rel_shares, name_network, name_rate_type = parameter_generator(network_params)
+    # Result dir preparation
+    run_name = f"ws_dist_{name_rate_type}_{n_nodes}n_{name_network}"
+    path_save_dir = os.path.join(save_path, run_name)
+    os.mkdir(path_save_dir)
+
+    # Creating initial states
+    initial_rel_shares, network_init = (
+        create_equal_network_init_and_shares(initial_rel_shares, n_nodes))
+
+    # Trajectory computation
+    paths_batches_mjp, paths_batches_sde = compute_mjp_sde_runs(
+        params=params,
+        x_init_network=network_init,
+        n_runs_sde=n_runs_sde,
+        n_runs_mjp=n_runs_mjp,
+        t_max=t_max,
+        save_resolution=save_resolution,
+        simulation_resolution_sde=simulation_resolution_sde,
+        batchsize_sde=batchsize_sde,
+        batchsize_mjp=batchsize_mjp,
+        save_path_batch=path_tmp_save
+    )
+
+    # Computation of Wasserstein distance
+    t, wasserstein_distances = compute_wasserstein_distance_from_batches(paths_batches_mjp, paths_batches_sde)
+
+    # Saving Results
+    np.savez_compressed(
+        os.path.join(path_save_dir, run_name),
+        t=t,
+        ws_distance=wasserstein_distances
+        )
+    with open(os.path.join(path_save_dir, run_name + ".txt"), "w") as f:
+        f.write(str(params))
+        f.write("\n")
+        f.write(f"Number of runs MJP: {n_runs_mjp}\n")
+        f.write(f"Number of runs SDE: {n_runs_sde}\n")
+        f.write(datetime.datetime.now().isoformat())
+
+    return
+
+
+def standard_wasserstein_test(
+        n_nodes: int,
+        edge_density: float,
+        n_states: int,
+        rate_type: str,
+
+):
+
+    run_wasserstein_test(
+        n_nodes=n_nodes,
+        edge_density=edge_density,
+        n_states=n_states,
+        rate_type=rate_type,
+        n_runs_sde=1000000,
+        n_runs_mjp=1000000,
+        batchsize_mjp=10000,
+        batchsize_sde=100000,
+        t_max=100,
+        save_path=save_path_results,
+        save_resolution=2,
+        simulation_resolution_sde=20
+    )
+
+    return
 
 
 def main():
@@ -133,15 +174,18 @@ def main():
     if test:
         run_wasserstein_test(
             n_nodes=100,
+            edge_density=0.9,
+            n_states=3,
+            rate_type="asymm",
             n_runs_mjp=100,
             n_runs_sde=100,
-            batchsize_mjp=1000,
-            batchsize_sde=1000,
+            batchsize_mjp=10,
+            batchsize_sde=10,
             t_max=10
         )
     return
 
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()

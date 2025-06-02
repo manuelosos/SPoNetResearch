@@ -4,7 +4,14 @@ import numpy as np
 from sponet.collective_variables import OpinionShares
 from sponet.network_generator import NetworkGenerator
 from numba import njit, prange
+import networkx as nx
 import os
+
+
+def save_network(save_path, network: nx.Graph):
+    adj_matrix = nx.to_numpy_array(network)
+    np.savez_compressed(save_path, adj_matrix=adj_matrix)
+    return
 
 
 def create_network_init(shares, n_nodes):

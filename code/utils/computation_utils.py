@@ -11,6 +11,7 @@ from sponet import sample_many_runs, CNVM, CNVMParameters, sample_cle
 from .network_utils import *
 import os
 
+
 def get_batches(n_total_runs: int, batchsize: int):
 
 	n_full_batches = n_total_runs // batchsize
