@@ -123,7 +123,7 @@ function main()
 
 
     if ensemble
-        list_n_nodes = test ? [10, 11, 12] : [1000, 1200, 1400]
+        list_n_nodes = test ? [10, 11, 12] : [10, 100, 1000, 10000, 100000, 1000000]
         list_edge_densities = log.(list_n_nodes) ./ list_n_nodes        
         list_abrvs_edge_densities = ["crit$(n)" for n in list_n_nodes]
 
