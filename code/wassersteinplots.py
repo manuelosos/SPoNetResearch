@@ -2,7 +2,7 @@ import json
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-
+from scipy.sparse import csc_matrix
 
 with open("paths.json") as file:
     data = json.load(file)
@@ -45,7 +45,25 @@ def test_network_creation():
 def main():
     return
 
+
+
+
+def load_sparse_matrix_npz(filename):
+    """
+    Load a sparse matrix saved by Julia as a .npz file.
+    Returns a scipy.sparse.csc_matrix.
+    """
+    loader = np.load(filename)
+    data = loader["data"]
+    indices = loader["indices"]
+    indptr = loader["indptr"]-1
+    shape = tuple(loader["shape"])
+
+    print(indptr)
+    return csc_matrix((data, indices, indptr), shape=shape)
+
+
 if __name__ == "__main__":
     # plot_wasserstein_distance_vs_network_size()
-    test_network_creation()
-
+    res=load_sparse_matrix_npz("/home/manuel/Documents/code/SpoNetResearch/juliacode/ER_p-crit1000_N1000.npz")
+    print(res)
