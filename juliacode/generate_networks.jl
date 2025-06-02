@@ -1,20 +1,14 @@
 import Graphs
-
 using ArgParse
 using JSON
 using Printf
 using Distributed
 using Random
-using Graphs
-using NPZ
-using SparseArrays
+@everywhere using Graphs, SparseArrays,NPZ
+
 
 # === Konfiguration ===
-"""
-    Returns the abbreviation for a given combination of nodes and edge_density.
-    Use the edge_density abrv to substitute very long values of edge_density with a more descriptive abbreviation.
-"""
-function abrv(n_nodes::Int, p::Float64; edge_density_abrv=nothing)
+@everywhere function abrv(n_nodes::Int, p::Float64; edge_density_abrv=nothing)
 
     if isnothing(edge_density_abrv )
         return "ER_p$(Int(round(p * 100000)))_N$(n_nodes)"
@@ -24,7 +18,8 @@ function abrv(n_nodes::Int, p::Float64; edge_density_abrv=nothing)
 end
 
 
-function save_sparse_matrix_npz(path::String, matrix::SparseMatrixCSC)
+
+@everywhere function save_sparse_matrix_npz(path::String, matrix::SparseMatrixCSC)
    data = Dict(
         "data" => matrix.nzval,
         "indices" => matrix.rowval,
@@ -36,12 +31,11 @@ function save_sparse_matrix_npz(path::String, matrix::SparseMatrixCSC)
 end
 
 
-function save_network(path::String, graph::SimpleGraph, metadata::Dict)
+@everywhere function save_network(path::String, graph::SimpleGraph, metadata::Dict)
     @info "Saving network to $path"
     mkpath(dirname(path))
 
     adj_matrix = Graphs.LinAlg.adjacency_matrix(graph)
-    println(typeof(adj_matrix))
    
 
     save_sparse_matrix_npz(path, adj_matrix)
@@ -50,8 +44,7 @@ end
 
 
 # === Hauptfunktion zur Netzwerkerzeugung ===
-
-function generate_network(n_nodes::Int, edge_density::Float64, force_no_isolates::Bool; edge_density_abrv=nothing, verbose=false)
+@everywhere function generate_network(save_path::String, n_nodes::Int, edge_density::Float64, force_no_isolates::Bool; edge_density_abrv=nothing, verbose=false)
     if edge_density >= 1
         error("edge_density must be < 1")
     end
@@ -81,11 +74,7 @@ function generate_network(n_nodes::Int, edge_density::Float64, force_no_isolates
         end
     end
 
-    edge_density_abrv = "crit$(n_nodes)"
-
-    network_name = abrv(n_nodes, edge_density, edge_density_abrv=edge_density_abrv)
-    global save_path_results
-    save_network(joinpath(save_path_results, network_name), graph, Dict("edge_density" => edge_density))
+    save_network(save_path, graph, Dict("edge_density" => edge_density))
 
     elapsed_time = time() - start_time
     if verbose
@@ -132,14 +121,21 @@ function main()
 
 
     if ensemble
-        list_n_nodes = test ? [10, 11] : [10, 100, 1000, 10000, 100000]
+        list_n_nodes = test ? [10, 11, 12] : [1000, 1200, 1400]
         list_edge_densities = log.(list_n_nodes) ./ list_n_nodes        
+        list_abrvs_edge_densities = ["crit$(n)" for n in list_n_nodes]
 
-        args = [(n, p, true) for n in list_n_nodes for p in list_edge_densities if p >= log(n)/n] 
 
-        for (n, p, fni) in args
-            generate_network( n, p, fni)
+        args = [(n, p, edge_density_abrv) for n in list_n_nodes for (p, edge_density_abrv) in zip(list_edge_densities, list_abrvs_edge_densities) if p >= log(n)/n] 
+
+        @sync @distributed for (n, p, edge_density_abrv) in args
+            @info("$(n)n $(p)p")
+
+            network_name = abrv(n, p, edge_density_abrv=edge_density_abrv)
+            save_path =  joinpath(save_path_results, network_name)
+            generate_network(save_path, n, p, true)
         end
+
 
     else
         generate_network(n_nodes, edge_density, force_no_isolates)
