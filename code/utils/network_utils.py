@@ -8,9 +8,14 @@ import networkx as nx
 import os
 
 
-def save_network(save_path, network: nx.Graph):
+def save_network(
+        save_path,
+        network: nx.Graph,
+        meta_data: dict[str, np.ndarray] = None
+):
     adj_matrix = nx.to_numpy_array(network)
-    np.savez_compressed(save_path, adj_matrix=adj_matrix)
+
+    np.savez_compressed(save_path, adj_matrix=adj_matrix, **meta_data)
     return
 
 

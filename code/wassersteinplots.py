@@ -13,7 +13,7 @@ def plot_wasserstein_distance_vs_network_size(
         ref_state=0
 ):
 
-    data = np.load(os.path.join(data_path,"ws_distance/wasserstein_errs_100000s.npz"))
+    data = np.load(os.path.join(data_path, "ws_distance/wasserstein_errs_100000s.npz"))
 
     node_list = data.get("n_nodes_list")
     errs = data.get("errs")
@@ -27,7 +27,7 @@ def plot_wasserstein_distance_vs_network_size(
 
     fig, ax = plt.subplots()
 
-    ax.plot( node_list, errs[:,10,ref_state], marker="o", label="wasserstein distance")
+    ax.plot( node_list, errs[:, 10, ref_state], marker="o", label="wasserstein distance")
     ax.plot(node_list, error_bound)
     ax.set_xscale("log")
     ax.set_yscale("log")
@@ -36,10 +36,16 @@ def plot_wasserstein_distance_vs_network_size(
     return
 
 
+def test_network_creation():
+
+    res = np.load("ER_p20_N12.npz")
+    print(res.keys())
+    print(res["edge_density"])
+
 def main():
     return
 
 if __name__ == "__main__":
-    plot_wasserstein_distance_vs_network_size()
-
+    # plot_wasserstein_distance_vs_network_size()
+    test_network_creation()
 

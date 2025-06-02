@@ -71,9 +71,9 @@ def generate_network(
 	start_time = time.time()
 
 	network = network_gen()
-
+	# f"ER_p{int(self.p * 100)}_N{self.num_agents}"
 	network_name = network_gen.abrv()
-	save_network(os.path.join(save_path_results, network_name), network)
+	save_network(os.path.join(save_path_results, network_name), network, {"edge_density": np.array([edge_density])})
 
 	end_time = time.time()
 	elapsed_time = end_time - start_time
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
 	if ensemble:
 
-		list_n_nodes = np.array([100, 1000, 10000, 100000, 1000000])
+		list_n_nodes = np.array([10, 100, 1000, 10000, 100000, 1000000])
 
 		if test:
 			list_n_nodes = np.array([10, 11, 12])
@@ -115,7 +115,6 @@ if __name__ == '__main__':
 
 	else:
 		generate_network(n_nodes, edge_density, force_no_isolates)
-
 
 
 
