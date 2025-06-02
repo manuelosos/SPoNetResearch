@@ -4,7 +4,7 @@ using JSON
 using Printf
 using Distributed
 using Random
-@everywhere using Graphs, SparseArrays,NPZ
+@everywhere using Graphs, SparseArrays, NPZ, MatrixMarket
 
 
 # === Konfiguration ===
@@ -38,7 +38,9 @@ end
     adj_matrix = Graphs.LinAlg.adjacency_matrix(graph)
    
 
-    save_sparse_matrix_npz(path, adj_matrix)
+    # save_sparse_matrix_npz(path, adj_matrix)
+
+    mmwrite(path, adj_matrix)
 
 end
 
