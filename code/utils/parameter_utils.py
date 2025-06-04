@@ -5,6 +5,7 @@ from sponet import CNVMParameters
 from sponet.network_generator import NetworkGenerator
 import networkx as nx
 import numpy as np
+from .network_utils import read_network
 import os
 
 
@@ -12,21 +13,39 @@ def _get_parameter_set(
 		transition_rate_matrix_monadic: np.ndarray,
 		transition_rate_matrix_dyadic: np.ndarray,
 		network_params: dict,
-):
+) -> tuple[CNVMParameters, str]:
 	"""
 	Generic function for initializing parameter sets.
 	:param transition_rate_matrix_monadic:
 	:param transition_rate_matrix_dyadic:
 	:param network_params:
-	:return:
+		If path network is contained, then the network will be loaded from the path.
+		The name of the network will be used as is.
+	:return tuple[CNVMParameters, network_name]:
 	"""
 
 	# unpacking network parameters
 	n_nodes = network_params["n_nodes"]
-	edge_density_erdos_renyi = network_params.get("edge_density", 1)
-	path_network = network_params.get("network_save_path", None)
+	edge_density_erdos_renyi = network_params["edge_density"]
+	path_network = network_params["network_save_path"]
 
+	if path_network is not None:  # Load existing network
+		name_network = os.path.basename(path_network)
+		network = read_network(path_network)
+
+		params = CNVMParameters(
+			num_opinions=transition_rate_matrix_monadic.shape[0],
+			network=network,
+			r=transition_rate_matrix_dyadic,
+			r_tilde=transition_rate_matrix_monadic,
+			alpha=1
+		)
+		return params, name_network
+
+
+	assert n_nodes is not None
 	if edge_density_erdos_renyi == 1:
+		# If edge probability is 1 complete networks are used and no network gen needs to be used
 
 		params = CNVMParameters(
 			num_opinions=transition_rate_matrix_monadic.shape[0],
@@ -39,23 +58,13 @@ def _get_parameter_set(
 		network_name = f"CN_N{n_nodes}"
 		return params, network_name
 
+
 	if edge_density_erdos_renyi < 1:
+		# Erdos Renyi Network
+
 		network_gen = sponet.network_generator.ErdosRenyiGenerator(n_nodes, edge_density_erdos_renyi)
-	else:
-		raise NotImplementedError
+		network_name = network_gen.abrv()
 
-	if path_network is not None:
-		adjacency_matrix = np.load(path_network)
-		network = nx.from_numpy_array(adjacency_matrix)
-
-		params = CNVMParameters(
-			num_opinions=transition_rate_matrix_monadic.shape[0],
-			network=network,
-			r=transition_rate_matrix_dyadic,
-			r_tilde=transition_rate_matrix_monadic,
-			alpha=1
-		)
-	else:
 		params = CNVMParameters(
 			num_opinions=transition_rate_matrix_monadic.shape[0],
 			network_generator=network_gen,
@@ -64,9 +73,10 @@ def _get_parameter_set(
 			alpha=1
 		)
 
-	network_name = network_gen.abrv()
+		return params, network_name
 
-	return params, network_name
+
+	raise NotImplementedError
 
 
 def get_parameter_generator(rate_type: str, n_states: int) -> Callable:

@@ -1,11 +1,45 @@
 from typing import Tuple
-
+import re
+from scipy.io import mmread
 import numpy as np
 from sponet.collective_variables import OpinionShares
 from sponet.network_generator import NetworkGenerator
 from numba import njit, prange
 import networkx as nx
 import os
+
+
+def get_available_networks(
+        path: str,
+        file_ending: str = ""
+) -> list[str]:
+    """
+    Returns a list of all available networks in a directory with absolute paths.
+    :param path:
+    Whether to return only the names of the networks and not the absolute paths.
+    :param file_ending:
+    Ending string should start with `.`.
+    :return:
+    """
+    if not os.path.isdir(path):
+        raise ValueError(f"{path} is not a directory")
+
+    dir_list = os.listdir(path)
+    return_list = []
+
+    for entry in dir_list:
+        if os.path.isdir(os.path.join(path, entry)):
+            continue
+        if entry.endswith(file_ending):
+            return_list.append(entry)
+
+    return return_list
+
+
+def read_network(
+        save_path: str
+):
+    return nx.from_numpy_array(mmread(save_path).toarray())
 
 
 def save_network(
@@ -17,6 +51,60 @@ def save_network(
 
     np.savez_compressed(save_path, adj_matrix=adj_matrix, **meta_data)
     return
+
+
+def get_network_params_from_name(
+    network_name: str
+) -> tuple[int, float]:
+    """
+    Extracts number of nodes and edge probability from the network name.
+    :param network_name:
+    :return:
+    """
+
+    segments = network_name.split("_")
+
+
+    # Network model
+    if segments[0] == "CN":
+        network_model = "CN"
+    elif segments[0] == "ER":
+        network_model = "ER"
+    else:
+        raise ValueError(f"{network_name} is not a valid network name")
+
+    # edge probability
+    match = re.match(r"^(.*?)(\d+)$", segments[1])
+
+    if match:
+        prefix = match.group(1)
+        number = match.group(2)
+
+        if prefix == "p":
+            edge_probability = number/100
+        elif prefix == "p-crit":
+            edge_probability = np.log(int(number))/int(number)
+        else:
+            raise ValueError(f"{network_name} is not a valid network name")
+    else:
+        raise ValueError(f"{network_name} is not a valid network name")
+
+    # n_nodes
+
+    match = re.match(r"^(.*?)(\d+)$", segments[2])
+    if match:
+        prefix = match.group(1)
+        number = match.group(2)
+
+        if prefix == "N":
+            n_nodes = int(number)
+        else:
+            raise ValueError(f"{network_name} is not a valid network name")
+    else:
+        raise ValueError(f"{network_name} is not a valid network name")
+
+
+    return n_nodes, edge_probability
 
 
 def create_network_init(shares, n_nodes):
@@ -110,3 +198,6 @@ def compute_propensity_difference(neighbor_list, x, rel_shares, R):
     state_propensity_differences = np.abs(state_propensity_differences/n_nodes - rel_shares_products) * R
 
     return np.max(state_propensity_differences)
+
+
+

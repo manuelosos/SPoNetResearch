@@ -1,10 +1,9 @@
 import datetime
 
-import numpy as np
-from sponet.network_generator import ErdosRenyiGenerator
 import scipy as sp
 from utils.parameter_utils import *
-from utils.computation_utils import *
+from utils.computation.computation_utils import *
+from utils.network_utils import *
 import json
 import os
 import argparse
@@ -31,11 +30,56 @@ parser = argparse.ArgumentParser(
     description="This script tests the convergence rate of the diffusion approximation to a CNVM "
                 "with respect to the Wasserstein distance."
 )
-parser.add_argument("--test", action="store_true", help="Set to test the script")
+mjp_parameters = parser.add_argument_group("Markov Jump Process parameters")
+mjp_parameters.add_argument(
+    "rate_type",
+    type=str,
+    help="Name of the parameter set that should be used. "
+         "See `parameter_utils.py` for more exact specifications."
+)
+mjp_parameters.add_argument(
+    "n_states",
+    type=int,
+    help="Number of states in the markov jump process on network. "
+         "Corresponding rate_type parameter set needs to be specified in `parameter_utils.py`."
+)
+network_parameters = parser.add_argument_group("Network parameters")
+network_parameters.add_argument(
+    "--network_path",
+    type=str,
+    default=None,
+    help="Path to a network that should be used for computation."
+)
+network_parameters.add_argument(
+    "--n_nodes",
+    type=int,
+    default=None,
+    help="Number of nodes in the network."
+)
+network_parameters.add_argument(
+    "--edge_probability",
+    type=float,
+    default=None,
+    help="Probability p for which an edge exists in the G(n,p) model. "
+         "Set to 1 to use fully connected network."
+         "Defaults to None"
+)
+computation_parameters = parser.add_argument_group("Computation Parameters")
+computation_parameters.add_argument(
+    "--id",
+    type=str,
+    default="",
+    help="Identifying string that differentiates batches from concurrently running processes."
+         "If several processes run at the same time use this string to differentiate them."
+)
+computation_parameters.add_argument(
+    "--test",
+    action="store_true",
+    help="Set to test the script"
+)
 
 
-
-def load_batches(paths_batches: List[str]) -> Tuple[np.ndarray, np.ndarray]:
+def load_batches(paths_batches: List[str]) -> tuple[np.ndarray, np.ndarray]:
 
     res = np.load(paths_batches[0])["x"]
     t = np.load(paths_batches[0])["t"]
@@ -78,8 +122,6 @@ def compute_wasserstein_distance_from_batches(
 
 
 def run_wasserstein_test(
-        n_nodes: int,
-        edge_density: float,
         n_states: int,
         rate_type: str,
         n_runs_mjp: int,
@@ -90,21 +132,28 @@ def run_wasserstein_test(
         save_path: str = "",
         save_resolution=2,
         simulation_resolution_sde=20,
-        network_save_path: str | None = None
+        network_save_path: str | None = None,
+        n_nodes: int | None = None,
+        edge_density: float | None = None,
+        process_id: str = ""
 ):
 
     # Parameter Initialization
     network_params = {"n_nodes": n_nodes, "edge_density": edge_density, "network_save_path": network_save_path}
     parameter_generator = get_parameter_generator(rate_type, n_states)
     params, initial_rel_shares, name_network, name_rate_type = parameter_generator(network_params)
+
+    n_nodes = params.num_agents
+
     # Result dir preparation
-    run_name = f"ws_dist_{name_rate_type}_{n_nodes}n_{name_network}"
+    run_name = f"ws_dist_{name_rate_type}_{name_network}"
     path_save_dir = os.path.join(save_path, run_name)
     os.mkdir(path_save_dir)
 
     # Creating initial states
     initial_rel_shares, network_init = (
-        create_equal_network_init_and_shares(initial_rel_shares, n_nodes))
+        create_equal_network_init_and_shares(initial_rel_shares, n_nodes)
+    )
 
     # Trajectory computation
     paths_batches_mjp, paths_batches_sde = compute_mjp_sde_runs(
@@ -117,7 +166,9 @@ def run_wasserstein_test(
         simulation_resolution_sde=simulation_resolution_sde,
         batchsize_sde=batchsize_sde,
         batchsize_mjp=batchsize_mjp,
-        save_path_batch=path_tmp_save
+        save_path_batch=path_tmp_save,
+        batch_id=process_id
+
     )
 
     # Computation of Wasserstein distance
@@ -140,16 +191,19 @@ def run_wasserstein_test(
 
 
 def standard_wasserstein_test(
-        n_nodes: int,
-        edge_density: float,
         n_states: int,
         rate_type: str,
+        n_nodes: int | None,
+        edge_probability: float | None,
+        network_save_path: str | None,
+        process_id: str
 
 ):
 
     run_wasserstein_test(
         n_nodes=n_nodes,
-        edge_density=edge_density,
+        edge_density=edge_probability,
+        network_save_path=network_save_path,
         n_states=n_states,
         rate_type=rate_type,
         n_runs_sde=1000000,
@@ -159,32 +213,53 @@ def standard_wasserstein_test(
         t_max=100,
         save_path=save_path_results,
         save_resolution=2,
-        simulation_resolution_sde=20
+        simulation_resolution_sde=20,
+        process_id=process_id
     )
 
     return
 
 
+def development_wasserstein_test():
+
+
+    run_wasserstein_test(
+        n_nodes=100,
+        edge_density=0.8,
+        network_save_path=None,
+        n_states=3,
+        rate_type="asymm",
+        n_runs_sde=1000,
+        n_runs_mjp=1000,
+        batchsize_mjp=500,
+        batchsize_sde=500,
+        t_max=100,
+        save_path=save_path_results,
+        save_resolution=2,
+        simulation_resolution_sde=20
+    )
+    return
+
+
 def main():
 
-
+    #  Argument Parsing ##########
     args = parser.parse_args()
     test: bool = args.test
 
-    if test:
-        run_wasserstein_test(
-            n_nodes=100,
-            edge_density=0.9,
-            n_states=3,
-            rate_type="asymm",
-            n_runs_mjp=100,
-            n_runs_sde=100,
-            batchsize_mjp=10,
-            batchsize_sde=10,
-            t_max=10
+    if not test:
+        standard_wasserstein_test(
+            args.n_states,
+            args.rate_type,
+            args.n_nodes,
+            args.edge_probability,
+            args.network_path,
+            args.id
         )
-    return
+    else:
+        development_wasserstein_test()
 
+    return
 
 
 if __name__ == "__main__":

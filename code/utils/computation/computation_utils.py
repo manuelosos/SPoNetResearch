@@ -8,7 +8,6 @@ import sponet
 from sponet.network_generator import ErdosRenyiGenerator
 from sponet.collective_variables import OpinionShares
 from sponet import sample_many_runs, CNVM, CNVMParameters, sample_cle
-from .network_utils import *
 import os
 
 
@@ -35,8 +34,9 @@ def compute_mjp_sde_runs(
 		batchsize_sde = 10000,
 		batchsize_mjp = 1000,
 		save_path_batch: str = "",
-		verbose = True
-) -> Tuple[List[str], List[str]]:
+		verbose = True,
+		batch_id: str = ""
+) -> tuple[List[str], List[str]]:
 	"""
 	Computes trajectories of a Markov jump process on a network and the corresponding diffusion approximation.
 	:rtype Tuple[List[str], List[str]]
@@ -57,6 +57,7 @@ def compute_mjp_sde_runs(
 	:param save_path_batch:
 		Path to save the results of the batches.
 	:param verbose:
+	:param batch_id:
 	:return:
 	"""
 	cv = OpinionShares(params.num_opinions, normalize=True)
@@ -65,7 +66,7 @@ def compute_mjp_sde_runs(
 	batches_mjp = get_batches(n_runs_mjp, batchsize_mjp)
 	paths_batches_mjp = []
 
-	print(f"Starting MJP simulation for {n_runs_mjp} in {len(batches_mjp)} batches.")
+	print(f"Starting MJP simulation for {n_runs_mjp} in {len(batches_mjp)} batches with batch id {batch_id}.")
 	for i, n_runs in enumerate(batches_mjp):
 
 		t, x = sample_many_runs(
@@ -77,12 +78,12 @@ def compute_mjp_sde_runs(
 			collective_variable=cv
 		)
 
-		path_batch = os.path.join(save_path_batch, f"batch_{i}_mjp.npz")
+		path_batch = os.path.join(save_path_batch, f"{batch_id}_batch_{i}_mjp.npz")
 		paths_batches_mjp.append(path_batch)
 		np.savez_compressed(path_batch, t=t, x=x[0])
 
 		if verbose:
-			print(f"Finished batch {i} with {n_runs} runs of MJP simulation.")
+			print(f"Finished batch {i} with {n_runs} and batch id {batch_id} runs of MJP simulation.")
 
 	if verbose:
 		print("Finished MJP simulation.")
@@ -91,7 +92,7 @@ def compute_mjp_sde_runs(
 	batches_sde = get_batches(n_runs_sde, batchsize_sde)
 	paths_batches_sde = []
 
-	print(f"Starting SDE simulation for {n_runs_sde} in {len(batches_sde)} batches.")
+	print(f"Starting SDE simulation for {n_runs_sde} in {len(batches_sde)} batches with batch_id {batch_id}.")
 	for i, n_runs in enumerate(batches_sde):
 
 		t, x = sample_cle(
@@ -103,12 +104,12 @@ def compute_mjp_sde_runs(
 			saving_offset=simulation_resolution_sde
 		)
 
-		path_batch = os.path.join(save_path_batch, f"batch_{i}_sde.npz")
+		path_batch = os.path.join(save_path_batch, f"{batch_id}_batch_{i}_sde.npz")
 		paths_batches_sde.append(path_batch)
 		np.savez_compressed(path_batch, t=t, x=x)
 
 		if verbose:
-			print(f"Finished batch {i} with {n_runs} runs of SDE simulation.")
+			print(f"Finished batch {i} with {n_runs} runs and batch id {batch_id} of SDE simulation.")
 
 	if verbose:
 		print("Finished SDE simulation.")
