@@ -35,7 +35,6 @@ function generate_uniform_random_graph_geometric(
 end
 
 
-
 function generate_uniform_random_graph(
     n_nodes::Int,
     edge_probability::Float64
@@ -45,7 +44,6 @@ function generate_uniform_random_graph(
     else
         return generate_uniform_random_graph_geometric(n_nodes, edge_probability)
     end
-
 end
 
 
@@ -61,18 +59,15 @@ function connect_isolates!(
 end
 
 
-
-
-
 function main()
 
-
     p=0.5
-    n_nodes = 100000
+    n_nodes = 1000
 
+    println("starting")
     t1 = time()
     adj_matrix = generate_uniform_random_graph(n_nodes, p)
-    elapsed_time = time()-t1
+    elapsed_time = time() - t1
     println(elapsed_time)
 
 

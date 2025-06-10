@@ -85,6 +85,17 @@ end
 end
 
 
+function save_graph(
+    graph,
+    metadata
+)
+
+    
+
+end
+
+
+
 function main()
 
     # Lade Pfade
