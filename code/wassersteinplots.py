@@ -50,4 +50,3 @@ def main():
 
 if __name__ == "__main__":
     # plot_wasserstein_distance_vs_network_size()
-    print(get_available_networks("utils/"))

@@ -6,6 +6,7 @@ from sponet.collective_variables import OpinionShares
 from sponet.network_generator import NetworkGenerator
 from numba import njit, prange
 import networkx as nx
+import h5py
 import os
 
 
@@ -39,7 +40,19 @@ def get_available_networks(
 def read_network(
         save_path: str
 ):
-    return nx.from_numpy_array(mmread(save_path).toarray())
+    file = h5py.File(save_path, "r")
+
+    adjacency_matrix = file["network"]["adjacency_matrix"]
+
+    parameters = file["network"].attrs
+    print(adjacency_matrix.shape)
+    print(len(np.nonzero(adjacency_matrix)[0]))
+    print(np.array(adjacency_matrix))
+    print(parameters)
+
+
+
+    #return nx.from_numpy_array(mmread(save_path).toarray())
 
 
 def save_network(
@@ -200,4 +213,6 @@ def compute_propensity_difference(neighbor_list, x, rel_shares, R):
     return np.max(state_propensity_differences)
 
 
+if __name__ == "__main__":
+    read_network("/home/manuel/Documents/code/SpoNetResearch/juliacode/test.hdf5")
 

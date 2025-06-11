@@ -1,4 +1,6 @@
 using Distributions
+include("generate_graphs.jl")
+
 
 
 
@@ -62,8 +64,7 @@ end
 function main()
 
     p=0.5
-    n_nodes = 1000
-
+    n_nodes = 10
     println("starting")
     t1 = time()
     adj_matrix = generate_uniform_random_graph(n_nodes, p)
@@ -71,7 +72,10 @@ function main()
     println(elapsed_time)
 
 
+
     connect_isolates!(adj_matrix)
+
+    save_graph(adj_matrix, "test.hdf5", Dict("edge_probability" => p))
 end
 
 main()
