@@ -31,6 +31,8 @@ function generate_uniform_random_graph_geometric(
         end
         if row_index < n_nodes
             adj_matrix[row_index+1, col_index+1] = !flipped 
+            adj_matrix[col_index+1, row_index+1] = !flipped 
+
         end
     end
     return adj_matrix
@@ -54,28 +56,40 @@ function connect_isolates!(
 )
     for i=1:size(adjacency_matrix)[1]
         if count(!=(false), adjacency_matrix[i]) == 0
-            adjacency_matrix[i, rand(1: size(adjacency_matrix)[1])] = true
+            tmp = rand(1: size(adjacency_matrix)[1])
+            adjacency_matrix[i, tmp] = true
+            adjacency_matrix[tmp, i] = true
         end
     end
     
 end
 
 
+function generate_graphs()
+	
+	n_nodes_list = [10, 100]
+	
+
+	for n_nodes in n_nodes_list
+        for n_nodes_crit in n_nodes_list
+            edge_probability = log(n_nodes_crit)/n_nodes_crit
+            adj_matrix = generate_uniform_random_graph(n_nodes, edge_probability)
+            connect_isolates!(adj_matrix)
+            
+            graph_name = "ER_n$(n_nodes)_p-crit$(n_nodes_crit)"
+            save_graph(adj_matrix, graph_name, Dict("edge_probability" => edge_probability))
+#"/workdir/bt310056/data$(graph_name).hdf5"
+        end
+    end
+
+end
+
+
 function main()
+	
 
-    p=0.5
-    n_nodes = 10
-    println("starting")
-    t1 = time()
-    adj_matrix = generate_uniform_random_graph(n_nodes, p)
-    elapsed_time = time() - t1
-    println(elapsed_time)
+	generate_graphs()
 
-
-
-    connect_isolates!(adj_matrix)
-
-    save_graph(adj_matrix, "test.hdf5", Dict("edge_probability" => p))
 end
 
 main()

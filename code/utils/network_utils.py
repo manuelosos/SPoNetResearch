@@ -45,14 +45,10 @@ def read_network(
     adjacency_matrix = file["network"]["adjacency_matrix"]
 
     parameters = file["network"].attrs
-    print(adjacency_matrix.shape)
-    print(len(np.nonzero(adjacency_matrix)[0]))
-    print(np.array(adjacency_matrix))
-    print(parameters)
+    parameters = dict(zip(parameters.keys(), parameters.values()))
 
+    return np.array(adjacency_matrix), parameters
 
-
-    #return nx.from_numpy_array(mmread(save_path).toarray())
 
 
 def save_network(
@@ -214,5 +210,5 @@ def compute_propensity_difference(neighbor_list, x, rel_shares, R):
 
 
 if __name__ == "__main__":
-    read_network("/home/manuel/Documents/code/SpoNetResearch/juliacode/test.hdf5")
+    print(read_network("/home/manuel/Documents/code/SpoNetResearch/juliacode/test.hdf5"))
 
