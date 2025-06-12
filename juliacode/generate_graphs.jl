@@ -1,8 +1,8 @@
-using HDF5
 using ArgParse
 using JSON
 using Distributed
 
+@everywhere using HDF5
 @everywhere include("fast_gnp.jl")
 
 
