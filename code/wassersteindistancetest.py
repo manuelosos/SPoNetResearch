@@ -129,19 +129,20 @@ def run_wasserstein_test(
         batchsize_mjp: int,
         batchsize_sde: int,
         t_max: int,
+        network_save_path: str,
         save_path: str = "",
         save_resolution=2,
         simulation_resolution_sde=20,
-        network_save_path: str | None = None,
-        n_nodes: int | None = None,
-        edge_density: float | None = None,
         process_id: str = ""
 ):
 
+    # Network Initialization
+    network, network_params = read_network(network_save_path)
+
+
     # Parameter Initialization
-    network_params = {"n_nodes": n_nodes, "edge_density": edge_density, "network_save_path": network_save_path}
     parameter_generator = get_parameter_generator(rate_type, n_states)
-    params, initial_rel_shares, name_network, name_rate_type = parameter_generator(network_params)
+    params, initial_rel_shares, network_params, name_rate_type = parameter_generator(network_params)
 
     n_nodes = params.num_agents
 

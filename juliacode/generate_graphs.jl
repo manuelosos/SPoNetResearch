@@ -12,7 +12,9 @@ using Distributed
     path,
     metadata
 )
-    
+    if !endswith(path, ".hdf5")
+        path = path * ".hdf5"
+    end
     h5open(path, "w") do fid
         network_group = create_group(fid, "network")
         network_group["adjacency_matrix"] = convert(Array{Bool}, adjacency_matrix)
@@ -43,7 +45,16 @@ function generate_graphs(
         adj_matrix = generate_uniform_random_graph(n, p)
         connect_isolates!(adj_matrix)
 
-        save_graph(adj_matrix, joinpath(save_path, graph_name), Dict("edge_probability" => p))
+        save_graph(
+            adj_matrix, 
+            joinpath(save_path, graph_name), 
+            Dict(
+                "network_name" => graph_name,
+                "network_model" => "erdos-renyi",
+                "n_nodes" => n,
+                "edge_probability" => p,
+                )
+            )
     end
     
 
