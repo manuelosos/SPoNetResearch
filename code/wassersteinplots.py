@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import csc_matrix
 import scipy as sp
-from utils.network_utils import get_available_networks
+from utils.network_utils import get_available_networks, read_network
 
 with open("paths.json") as file:
     data = json.load(file)
@@ -39,14 +39,12 @@ def plot_wasserstein_distance_vs_network_size(
 
 
 def test_network_creation():
-
-    res = sp.io.mmread("ER_p-crit1000_N1000")
-    print(res.toarray().shape)
-
+    path = "/home/manuel/Documents/code/SpoNetResearch/juliacode/ER_n10_p-crit-10"
+    print(read_network(path))
 
 def main():
     return
 
 
 if __name__ == "__main__":
-    # plot_wasserstein_distance_vs_network_size()
+    test_network_creation()

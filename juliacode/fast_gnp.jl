@@ -1,6 +1,4 @@
 using Distributions
-include("generate_graphs.jl")
-
 
 
 
@@ -65,31 +63,3 @@ function connect_isolates!(
 end
 
 
-function generate_graphs()
-	
-	n_nodes_list = [10, 100]
-	
-
-	for n_nodes in n_nodes_list
-        for n_nodes_crit in n_nodes_list
-            edge_probability = log(n_nodes_crit)/n_nodes_crit
-            adj_matrix = generate_uniform_random_graph(n_nodes, edge_probability)
-            connect_isolates!(adj_matrix)
-            
-            graph_name = "ER_n$(n_nodes)_p-crit$(n_nodes_crit)"
-            save_graph(adj_matrix, graph_name, Dict("edge_probability" => edge_probability))
-#"/workdir/bt310056/data$(graph_name).hdf5"
-        end
-    end
-
-end
-
-
-function main()
-	
-
-	generate_graphs()
-
-end
-
-main()

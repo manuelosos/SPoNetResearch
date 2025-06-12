@@ -64,6 +64,7 @@ end
     if force_no_isolates
         # einfache Methode um Isolierte zu verbinden
         isolated = findall(v -> degree(graph, v) == 0, vertices(graph))
+    
         while !isempty(isolated)
             for v in isolated
                 u = rand(1:n_nodes)
