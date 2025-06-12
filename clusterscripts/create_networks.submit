@@ -9,4 +9,4 @@
 
 #SBATCH --ntasks=64
 module load julia
-julia -p 20 --project=. generate_networks.jl -e
+julia -p 20 --project=. generate_graphs.jl
