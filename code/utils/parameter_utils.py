@@ -31,7 +31,9 @@ def _get_parameter_set(
 
 	if path_network is not None:  # Load existing network
 		name_network = os.path.basename(path_network)
-		network = read_network(path_network)
+		network, pre_gen_network_params = read_network(path_network)
+
+		edge_density_erdos_renyi = pre_gen_network_params.get("edge_probability", 1)
 
 		params = CNVMParameters(
 			num_opinions=transition_rate_matrix_monadic.shape[0],

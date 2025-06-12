@@ -47,7 +47,7 @@ def read_network(
     parameters = file["network"].attrs
     parameters = dict(zip(parameters.keys(), parameters.values()))
 
-    return np.array(adjacency_matrix), parameters
+    return nx.from_numpy_array(np.array(adjacency_matrix)), parameters
 
 
 
