@@ -1,4 +1,5 @@
 import datetime
+import h5py
 
 import scipy as sp
 from utils.parameter_utils import *
@@ -15,15 +16,6 @@ with open("paths.json") as file:
 data_path = path_data.get("data_path", "")
 path_tmp_save = path_data.get("path_tmp_save", "")
 save_path_results = path_data.get("save_path_results", "")
-logging_path = path_data.get("logging_path", "")
-
-
-# logger = logging.getLogger(__name__)
-# logger.setLevel(logging.DEBUG)
-# file_handler = logging.FileHandler(os.path.join(logging_path, "wasserstein.log"))
-# formatter = logging.Formatter('%(asctime)s - %(message)s')
-# file_handler.setFormatter(formatter)
-# logger.addHandler(file_handler)
 
 # Command Line Arguments ###############################################################################################
 parser = argparse.ArgumentParser(
@@ -133,27 +125,25 @@ def run_wasserstein_test(
         save_path: str = "",
         save_resolution=2,
         simulation_resolution_sde=20,
-        process_id: str = ""
+        process_id: str = "",
+        delete_batches: bool = True
 ):
 
     # Network Initialization
     network, network_params = read_network(network_save_path)
 
-
     # Parameter Initialization
     parameter_generator = get_parameter_generator(rate_type, n_states)
-    params, initial_rel_shares, network_params, name_rate_type = parameter_generator(network_params)
-
-    n_nodes = params.num_agents
+    params, initial_rel_shares, name_rate_type = parameter_generator(network)
 
     # Result dir preparation
-    run_name = f"ws_dist_{name_rate_type}_{name_network}"
+    run_name = f"ws_dist_{name_rate_type}_{network_params['network_name'].decode()}"
     path_save_dir = os.path.join(save_path, run_name)
     os.mkdir(path_save_dir)
 
     # Creating initial states
     initial_rel_shares, network_init = (
-        create_equal_network_init_and_shares(initial_rel_shares, n_nodes)
+        create_equal_network_init_and_shares(initial_rel_shares, network_params["n_nodes"])
     )
 
     # Trajectory computation
@@ -167,26 +157,33 @@ def run_wasserstein_test(
         simulation_resolution_sde=simulation_resolution_sde,
         batchsize_sde=batchsize_sde,
         batchsize_mjp=batchsize_mjp,
-        save_path_batch=path_tmp_save,
+        save_path_batch=path_save_dir,
         batch_id=process_id
-
     )
 
     # Computation of Wasserstein distance
     t, wasserstein_distances = compute_wasserstein_distance_from_batches(paths_batches_mjp, paths_batches_sde)
 
+    if delete_batches:
+        for file in paths_batches_mjp + paths_batches_sde:
+            os.remove(file)
+
     # Saving Results
-    np.savez_compressed(
-        os.path.join(path_save_dir, run_name),
-        t=t,
-        ws_distance=wasserstein_distances
-        )
-    with open(os.path.join(path_save_dir, run_name + ".txt"), "w") as f:
-        f.write(str(params))
-        f.write("\n")
-        f.write(f"Number of runs MJP: {n_runs_mjp}\n")
-        f.write(f"Number of runs SDE: {n_runs_sde}\n")
-        f.write(datetime.datetime.now().isoformat())
+    with h5py.File(os.path.join(path_save_dir, run_name + ".hdf5"), "w") as file:
+        ws_dist_group = file.create_group("wasserstein_distance")
+
+        ws_dist_group.attrs["rate_type"] = rate_type
+        ws_dist_group.attrs["n_states"] = n_states
+        for attribute in network_params.keys():
+            ws_dist_group.attrs[attribute] = network_params[attribute]
+        ws_dist_group.attrs["params_str"] = str(params)
+        ws_dist_group.attrs["n_runs_sde"] = n_runs_sde
+        ws_dist_group.attrs["n_runs_mjp"] = n_runs_mjp
+        ws_dist_group.attrs["sde_simulation_resolution"] = simulation_resolution_sde
+        ws_dist_group.attrs["date_of_computation"] = datetime.datetime.now().isoformat()
+
+        ws_dist_group.create_dataset("wasserstein_distance", data=wasserstein_distances)
+        ws_dist_group.create_dataset("t", data=t)
 
     return
 
@@ -194,16 +191,12 @@ def run_wasserstein_test(
 def standard_wasserstein_test(
         n_states: int,
         rate_type: str,
-        n_nodes: int | None,
-        edge_probability: float | None,
-        network_save_path: str | None,
+        network_save_path: str,
         process_id: str
 
 ):
 
     run_wasserstein_test(
-        n_nodes=n_nodes,
-        edge_density=edge_probability,
         network_save_path=network_save_path,
         n_states=n_states,
         rate_type=rate_type,
@@ -225,9 +218,7 @@ def development_wasserstein_test():
 
 
     run_wasserstein_test(
-        n_nodes=100,
-        edge_density=0.8,
-        network_save_path=None,
+        network_save_path="/home/manuel/Documents/code/data/test_data/ER_n100_p-crit-100.hdf5",
         n_states=3,
         rate_type="asymm",
         n_runs_sde=1000,

@@ -1,4 +1,5 @@
 import json
+import h5py
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -19,7 +20,6 @@ def plot_wasserstein_distance_vs_network_size(
 
     node_list = data.get("n_nodes_list")
     errs = data.get("errs")
-    print(errs.shape)
 
     plot_err = np.empty(len(node_list))
     for i, n_nodes in enumerate(node_list):
@@ -38,13 +38,26 @@ def plot_wasserstein_distance_vs_network_size(
     return
 
 
+def read_run():
+    
+    with h5py.File("/home/manuel/Documents/code/SpoNetResearch/code/ws_dist_CNVM_3s_asymm_ER_n100_p-crit-100/ws_dist_CNVM_3s_asymm_ER_n100_p-crit-100.hdf5", "r") as f:
+        result = f["wasserstein_distance"]
+
+        parameters = dict(zip(result.attrs.keys(), result.attrs.values()))
+        ws_distance = np.array(result["wasserstein_distance"])
+        t = np.array(result["t"])
+
+    return t, ws_distance, parameters
+
+
 def test_network_creation():
     path = "/home/manuel/Documents/code/SpoNetResearch/juliacode/ER_n10_p-crit-10"
     print(read_network(path))
+
 
 def main():
     return
 
 
 if __name__ == "__main__":
-    test_network_creation()
+    print(read_run())
