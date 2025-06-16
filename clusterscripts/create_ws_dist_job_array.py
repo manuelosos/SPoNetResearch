@@ -44,7 +44,7 @@ def create_array_parameter_file(
 
 	with open("parameters/ws_distance_parameters.txt", "w") as f:
 		for network_path in network_paths:
-			f.write(f"\"{rate_type}\" {n_states} \"{network_path}\"\n")
+			f.write(f"\"{rate_type}\" {n_states} --network_path=\"{network_path}\"\n")
 	print(f"created {len(network_paths)} jobs.")
 
 
