@@ -243,10 +243,8 @@ def main():
         standard_wasserstein_test(
             args.n_states,
             args.rate_type,
-            args.n_nodes,
-            args.edge_probability,
-            args.network_path,
-            args.id
+            args.network_save_path,
+            "tmp"
         )
     else:
         development_wasserstein_test()
