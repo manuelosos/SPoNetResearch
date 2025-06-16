@@ -243,7 +243,7 @@ def main():
         standard_wasserstein_test(
             args.n_states,
             args.rate_type,
-            args.network_save_path,
+            args.network_path,
             "tmp"
         )
     else:
