@@ -23,13 +23,14 @@ parser.add_argument(
 	help="Path to a dir where networks are saved."
 )
 
+
 def get_available_networks(
 		path: str | os.PathLike,
 ):
 	network_path_list = []
 	for file in os.listdir(path):
 		if file.endswith(".hdf5"):
-			network_path_list.append(osp.abspath(file))
+			network_path_list.append(osp.join(path, file))
 
 	return network_path_list
 
