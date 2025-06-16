@@ -1,5 +1,6 @@
 import json
 import h5py
+import os.path as osp
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,6 +11,25 @@ from utils.network_utils import get_available_networks, read_network
 with open("paths.json") as file:
     data = json.load(file)
 data_path = data.get("data_path")
+
+
+def read_wasserstein_results(
+        path: str,
+):
+
+    dir_list = os.listdir(path)
+
+    t = None
+    trajectories = []
+    parameter_list = []
+
+    for entry in dir_list:
+        if osp.isdir(osp.join(path, entry)) and (entry+".hdf5") in os.listdir(osp.join(path, entry)):
+            t, trajectory, parameters = read_run(osp.join(path, entry+".hdf5"))
+            parameter_list.append(parameters)
+            trajectories.append(trajectory)
+
+    return t, trajectories, parameter_list
 
 
 def plot_wasserstein_distance_vs_network_size(
@@ -38,9 +58,11 @@ def plot_wasserstein_distance_vs_network_size(
     return
 
 
-def read_run():
+def read_run(
+        path: str
+):
     
-    with h5py.File("/home/manuel/Documents/code/SpoNetResearch/code/ws_dist_CNVM_3s_asymm_ER_n100_p-crit-100/ws_dist_CNVM_3s_asymm_ER_n100_p-crit-100.hdf5", "r") as f:
+    with h5py.File(path, "r") as f:
         result = f["wasserstein_distance"]
 
         parameters = dict(zip(result.attrs.keys(), result.attrs.values()))
@@ -50,32 +72,5 @@ def read_run():
     return t, ws_distance, parameters
 
 
-def test_network_creation():
-    path = "/home/manuel/Documents/code/SpoNetResearch/juliacode/ER_n10_p-crit-10"
-    print(read_network(path))
-
-
-def main():
-    return
-
-
 if __name__ == "__main__":
-    print(read_run())
-
-    File
-    "h5py/_objects.pyx", line
-    55, in h5py._objects.with_phil.wrapper
-    File
-    "h5py/h5f.pyx", line
-    102, in h5py.h5f.open
-FileNotFoundError: [Errno 2]
-Unable
-to
-synchronously
-open
-file(unable
-to
-open
-file: name = '"/workdir/bt310056/SPoNetResearch/clusterscripts/ER_n100_p-crit-100.hdf5"', errno = 2, error
-message = 'No such file or directory', flags = 0, o_flags = 0)
-h
+    pass
