@@ -61,3 +61,21 @@ def main():
 
 if __name__ == "__main__":
     print(read_run())
+
+    File
+    "h5py/_objects.pyx", line
+    55, in h5py._objects.with_phil.wrapper
+    File
+    "h5py/h5f.pyx", line
+    102, in h5py.h5f.open
+FileNotFoundError: [Errno 2]
+Unable
+to
+synchronously
+open
+file(unable
+to
+open
+file: name = '"/workdir/bt310056/SPoNetResearch/clusterscripts/ER_n100_p-crit-100.hdf5"', errno = 2, error
+message = 'No such file or directory', flags = 0, o_flags = 0)
+h
