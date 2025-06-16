@@ -31,7 +31,6 @@ function generate_uniform_random_graph_PreZER(
     col_index::Int = 0
 
     #debugging variables
-    edge_skips = []
 
     edge_skip = 0 
     while row_index <= n_nodes
@@ -52,7 +51,6 @@ function generate_uniform_random_graph_PreZER(
         end
 
         col_index += edge_skip
-        append!(edge_skips, edge_skip)
         
         # adjust column and row index to fit in square matrix again
         while col_index >= row_index && row_index <= n_nodes
@@ -68,7 +66,7 @@ function generate_uniform_random_graph_PreZER(
 
 
     end
-    return adj_matrix, edge_skip
+    return adj_matrix
 end
 
 
@@ -133,6 +131,18 @@ function connect_isolates!(
 end
 
 
+function main2()
+
+
+    p = 0.2
+    n_nodes = 10
+    trials = 2800000
+
+
+end
+
+
+
 function main()
     p = 0.2
     n_nodes = 10
@@ -143,7 +153,7 @@ function main()
     generate_uniform_random_graph_PreZER(n_nodes, p)
     Threads.@threads for i in 1:n_t
         for j in 1:chunksize
-            tmp, edge_skips = generate_uniform_random_graph_PreZER(n_nodes, p)        
+            tmp = generate_uniform_random_graph_PreZER(n_nodes, p)        
             results[i,:,:] += tmp
         end
 
