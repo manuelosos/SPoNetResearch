@@ -23,6 +23,43 @@ def get_batches(n_total_runs: int, batchsize: int):
 	return batches
 
 
+def save_batch(
+		save_path: str,
+		time_traj: np.ndarray,
+		trajectories: np.ndarray,
+):
+	np.savez_compressed(save_path, t=time_traj, x=trajectories)
+
+	return
+
+
+def compute_mjp_batch(
+		params: CNVMParameters,
+		initial_states,
+		t_max,
+		n_runs,
+		save_resolution,
+		cv
+):
+
+	t, x = sample_many_runs(
+		params=params,
+		initial_states=np.array(initial_states),
+		t_max=t_max,
+		num_timesteps=save_resolution * t_max + 1,
+		num_runs=n_runs,
+		collective_variable=cv
+	)
+
+
+	return
+
+
+
+
+
+
+
 def compute_mjp_sde_runs(
 		params: CNVMParameters,
 		x_init_network: np.ndarray,
