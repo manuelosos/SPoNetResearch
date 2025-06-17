@@ -4,9 +4,7 @@ import os.path as osp
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.sparse import csc_matrix
-import scipy as sp
-from utils.network_utils import get_available_networks, read_network
+
 
 with open("paths.json") as file:
     data = json.load(file)
@@ -54,6 +52,18 @@ def plot_wasserstein_distance_vs_network_size(
     ax.set_xscale("log")
     ax.set_yscale("log")
     fig.show()
+
+    return
+
+
+def plot_wasserstein_distance_vs_n_nodes_and_edge_probability():
+
+    path = ""
+
+    t, trajectories, parameter_list = read_wasserstein_results(path)
+
+
+
 
     return
 

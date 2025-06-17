@@ -74,27 +74,11 @@ computation_parameters.add_argument(
 )
 
 
-@dataclass
-class WassersteinParameters:
-    n_states: int
-    rate_type: str
-    network: nx.Graph
-    network_params: dict
-    t_max: int
-    n_runs_mjp: int
-    n_runs_sde: int
-    batchsize_mjp: int
-    batchsize_sde: int
-    save_resolution: int
-    simulation_resolution_sde: int
-
-
 def standard_ws_from_network_and_rate_type(
         n_states: int,
         rate_type: str,
         network_save_path: str,
 ) -> WassersteinParameters:
-
 
     # Network Initialization
     network, network_params = read_network(network_save_path)
@@ -112,12 +96,6 @@ def standard_ws_from_network_and_rate_type(
         save_resolution=2,
         simulation_resolution_sde=20
     )
-
-
-
-
-
-
 
 
 def load_batches(paths_batches: List[str]) -> tuple[np.ndarray, np.ndarray]:
@@ -162,76 +140,36 @@ def compute_wasserstein_distance_from_batches(
     return t, distances_wasserstein
 
 
-
 def run_full_wasserstein_test(
-        n_states: int,
-        rate_type: str,
-        n_runs_mjp: int,
-        n_runs_sde: int,
-        batchsize_mjp: int,
-        batchsize_sde: int,
-        t_max: int,
-        network_save_path: str,
+        ws_params: WassersteinParameters,
         save_path: str = "",
-        save_resolution=2,
-        simulation_resolution_sde=20,
         process_id: str = "",
         delete_batches: bool = True,
-        single_batch: bool = False
 ):
-    # Single Batch is for computation of a single batch in a single cluster job
-    if single_batch:
-        delete_batches = False
-
-    # Network Initialization
-    network, network_params = read_network(network_save_path)
 
     # Parameter Initialization
-    parameter_generator = get_parameter_generator(rate_type, n_states)
-    params, initial_rel_shares, name_rate_type = parameter_generator(network)
+    parameter_generator = get_parameter_generator(ws_params.rate_type, ws_params.n_states)
+    params, initial_rel_shares, name_rate_type = parameter_generator(ws_params.network)
 
     # Result dir preparation
-    run_name = f"ws_dist_{name_rate_type}_{network_params['network_name'].decode()}"
+    run_name = f"ws_dist_{name_rate_type}_{ws_params.network_params['network_name'].decode()}"
     path_save_dir = os.path.join(save_path, run_name)
     if not os.path.isdir(path_save_dir):
         os.mkdir(path_save_dir)
 
     # Creating initial states
     initial_rel_shares, network_init = (
-        create_equal_network_init_and_shares(initial_rel_shares, network_params["n_nodes"])
+        create_equal_network_init_and_shares(initial_rel_shares, ws_params.network_params["n_nodes"])
     )
 
-    if not single_batch:
-
-        # Trajectory computation
-        paths_batches_mjp, paths_batches_sde = compute_mjp_sde_runs(
-            params=params,
-            x_init_network=network_init,
-            n_runs_sde=n_runs_sde,
-            n_runs_mjp=n_runs_mjp,
-            t_max=t_max,
-            save_resolution=save_resolution,
-            simulation_resolution_sde=simulation_resolution_sde,
-            batchsize_sde=batchsize_sde,
-            batchsize_mjp=batchsize_mjp,
-            save_path_batch=path_save_dir,
-            batch_id=process_id
-        )
-    else:
-        paths_batches_mjp, paths_batches_sde = compute_mjp_sde_runs(
-            params=params,
-            x_init_network=network_init,
-            n_runs_sde=n_runs_sde,
-            n_runs_mjp=n_runs_mjp,
-            t_max=t_max,
-            save_resolution=save_resolution,
-            simulation_resolution_sde=simulation_resolution_sde,
-            batchsize_sde=batchsize_sde,
-            batchsize_mjp=batchsize_mjp,
-            save_path_batch=path_save_dir,
-            batch_id=process_id
-        )
-
+    # Trajectory computation
+    paths_batches_mjp, paths_batches_sde = compute_mjp_sde_runs(
+        comp_params=ws_params,
+        cnvm_params=params,
+        x_init_network=network_init,
+        batch_save_path=path_save_dir,
+        batch_id=process_id
+    )
 
     # Computation of Wasserstein distance
     t, wasserstein_distances = compute_wasserstein_distance_from_batches(paths_batches_mjp, paths_batches_sde)
@@ -240,22 +178,46 @@ def run_full_wasserstein_test(
         for file in paths_batches_mjp + paths_batches_sde:
             os.remove(file)
 
+    run_name = f"ws_dist_{name_rate_type}_{ws_params.network_params['network_name'].decode()}"
+
     # Saving Results
-    with h5py.File(os.path.join(path_save_dir, run_name + ".hdf5"), "w") as file:
+    save_wasserstein_result(
+        os.path.join(path_save_dir, run_name+".hdf5"),
+        ws_params,
+        params,
+        wasserstein_distances,
+        t
+    )
+
+    return
+
+
+def save_wasserstein_result(
+        path: str | os.PathLike,
+        ws_params: WassersteinParameters,
+        cnvm_params: CNVMParameters,
+        error_trajectory: np.ndarray,
+        time_trajectory: np.ndarray
+):
+    if not path.endswith(".hdf5"):
+        path += ".hdf5"
+
+
+    with h5py.File(path, "w") as file:
         ws_dist_group = file.create_group("wasserstein_distance")
 
-        ws_dist_group.attrs["rate_type"] = rate_type
-        ws_dist_group.attrs["n_states"] = n_states
-        for attribute in network_params.keys():
-            ws_dist_group.attrs[attribute] = network_params[attribute]
-        ws_dist_group.attrs["params_str"] = str(params)
-        ws_dist_group.attrs["n_runs_sde"] = n_runs_sde
-        ws_dist_group.attrs["n_runs_mjp"] = n_runs_mjp
-        ws_dist_group.attrs["sde_simulation_resolution"] = simulation_resolution_sde
+        ws_dist_group.attrs["rate_type"] = ws_params.rate_type
+        ws_dist_group.attrs["n_states"] = ws_params.n_states
+        for attribute in ws_params.network_params.keys():
+            ws_dist_group.attrs[attribute] = ws_params.network_params[attribute]
+        ws_dist_group.attrs["params_str"] = str(cnvm_params)
+        ws_dist_group.attrs["n_runs_sde"] = ws_params.n_runs_sde
+        ws_dist_group.attrs["n_runs_mjp"] = ws_params.n_runs_mjp
+        ws_dist_group.attrs["sde_simulation_resolution"] = ws_params.simulation_resolution_sde
         ws_dist_group.attrs["date_of_computation"] = datetime.datetime.now().isoformat()
 
-        ws_dist_group.create_dataset("wasserstein_distance", data=wasserstein_distances)
-        ws_dist_group.create_dataset("t", data=t)
+        ws_dist_group.create_dataset("wasserstein_distance", data=error_trajectory)
+        ws_dist_group.create_dataset("t", data=time_trajectory)
 
     return
 
@@ -268,41 +230,9 @@ def standard_wasserstein_test(
 
 ):
 
-    run_full_wasserstein_test(
-        network_save_path=network_save_path,
-        n_states=n_states,
-        rate_type=rate_type,
-        n_runs_sde=1000000,
-        n_runs_mjp=1000000,
-        batchsize_mjp=10000,
-        batchsize_sde=100000,
-        t_max=100,
-        save_path=save_path_results,
-        save_resolution=2,
-        simulation_resolution_sde=20,
-        process_id=process_id
-    )
-
     return
 
 
-def development_wasserstein_test():
-
-
-    run_full_wasserstein_test(
-        network_save_path="/home/manuel/Documents/code/data/test_data/ER_n100_p-crit-100.hdf5",
-        n_states=3,
-        rate_type="asymm",
-        n_runs_sde=1000,
-        n_runs_mjp=1000,
-        batchsize_mjp=500,
-        batchsize_sde=500,
-        t_max=100,
-        save_path=save_path_results,
-        save_resolution=2,
-        simulation_resolution_sde=20
-    )
-    return
 
 
 def main():
@@ -319,8 +249,7 @@ def main():
             "tmp"
         )
     else:
-        development_wasserstein_test()
-
+        pass
     return
 
 
