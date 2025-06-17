@@ -7,7 +7,7 @@ using Distributed
 
 
 
- @everywhere function save_graph(
+ @everywhere function save_graph_adjacency_matrix(
     adjacency_matrix,
     path,
     metadata
@@ -25,6 +25,8 @@ using Distributed
     end
 
 end
+
+
 
 
 function generate_graphs(
@@ -45,7 +47,7 @@ function generate_graphs(
         adj_matrix = generate_uniform_random_graph(n, p)
         connect_isolates!(adj_matrix)
 
-        save_graph(
+        save_graph_adjacency_matrix(
             adj_matrix, 
             joinpath(save_path, graph_name), 
             Dict(
