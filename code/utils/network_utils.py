@@ -50,7 +50,6 @@ def read_network(
     return nx.from_numpy_array(np.array(adjacency_matrix)), parameters
 
 
-
 def save_network(
         save_path,
         network: nx.Graph,
