@@ -1,5 +1,5 @@
 from typing import Callable
-
+from .computation_utils import *
 import sponet
 from sponet import CNVMParameters
 from sponet.network_generator import NetworkGenerator
@@ -16,6 +16,60 @@ class NetworkParameters:
 	network_model: str
 	n_nodes: int
 
+
+@dataclass
+class WassersteinParameters:
+	n_states: int
+	rate_type: str
+	network: nx.Graph
+	network_params: dict
+	t_max: int
+	n_runs_mjp: int
+	n_runs_sde: int
+	batchsize_mjp: int
+	batchsize_sde: int
+	save_resolution: int
+	simulation_resolution_sde: int
+
+	def __post_init__(self):
+		if self.n_runs_mjp % self.batchsize_mjp != 0:
+			raise ValueError("Number of mjp runs must be divisible by the batchsize")
+		if self.n_runs_sde % self.batchsize_sde != 0:
+			raise ValueError("Number of sde runs must be divisible by the batchsize")
+
+		# CNVM parameter Initialization
+		parameter_generator = get_parameter_generator(self.rate_type, self.n_states)
+		self.cnvm_params, initial_rel_shares, name_rate_type = parameter_generator(self.network)
+
+		self.initial_rel_shares, self.network_init = (
+			create_equal_network_init_and_shares(initial_rel_shares, self.network_params["n_nodes"])
+		)
+
+		self.run_name: str = f"ws_dist_{self.n_states}s_{self.rate_type}_{self.network_params['network_name'].decode()}"
+
+
+def standard_ws_from_network_and_rate_type(
+		n_states: int,
+		rate_type: str,
+		network_save_path: str,
+) -> WassersteinParameters:
+
+	# Network Initialization
+	network, network_params = read_network(network_save_path)
+
+	return WassersteinParameters(
+		n_states=n_states,
+		rate_type=rate_type,
+		network=network,
+		network_params=network_params,
+		t_max=200,
+		n_runs_mjp=1000000,
+		n_runs_sde=1000000,
+		batchsize_mjp=10000,
+		batchsize_sde=100000,
+		save_resolution=2,
+		simulation_resolution_sde=20
+	)
 
 def _get_parameter_set(
 		transition_rate_matrix_monadic: np.ndarray,

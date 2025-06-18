@@ -3,7 +3,7 @@ import h5py
 
 import scipy as sp
 from utils.parameter_utils import *
-from utils.computation.computation_utils import *
+from utils.computation_utils import *
 from utils.network_utils import *
 import json
 import os
@@ -74,28 +74,8 @@ computation_parameters.add_argument(
 )
 
 
-def standard_ws_from_network_and_rate_type(
-        n_states: int,
-        rate_type: str,
-        network_save_path: str,
-) -> WassersteinParameters:
 
-    # Network Initialization
-    network, network_params = read_network(network_save_path)
 
-    return WassersteinParameters(
-        n_states=n_states,
-        rate_type=rate_type,
-        network=network,
-        network_params=network_params,
-        t_max=200,
-        n_runs_mjp=1000000,
-        n_runs_sde=1000000,
-        batchsize_mjp=10000,
-        batchsize_sde=100000,
-        save_resolution=2,
-        simulation_resolution_sde=20
-    )
 
 
 def load_batches(paths_batches: List[str]) -> tuple[np.ndarray, np.ndarray]:
@@ -140,6 +120,8 @@ def compute_wasserstein_distance_from_batches(
     return t, distances_wasserstein
 
 
+
+
 def run_full_wasserstein_test(
         ws_params: WassersteinParameters,
         save_path: str = "",
@@ -147,27 +129,15 @@ def run_full_wasserstein_test(
         delete_batches: bool = True,
 ):
 
-    # Parameter Initialization
-    parameter_generator = get_parameter_generator(ws_params.rate_type, ws_params.n_states)
-    params, initial_rel_shares, name_rate_type = parameter_generator(ws_params.network)
+    save_dir_path = os.path.join(save_path, ws_params.run_name)
+    if not os.path.isdir(save_dir_path):
+        os.mkdir(save_dir_path)
 
-    # Result dir preparation
-    run_name = f"ws_dist_{name_rate_type}_{ws_params.network_params['network_name'].decode()}"
-    path_save_dir = os.path.join(save_path, run_name)
-    if not os.path.isdir(path_save_dir):
-        os.mkdir(path_save_dir)
-
-    # Creating initial states
-    initial_rel_shares, network_init = (
-        create_equal_network_init_and_shares(initial_rel_shares, ws_params.network_params["n_nodes"])
-    )
 
     # Trajectory computation
     paths_batches_mjp, paths_batches_sde = compute_mjp_sde_runs(
         comp_params=ws_params,
-        cnvm_params=params,
-        x_init_network=network_init,
-        batch_save_path=path_save_dir,
+        batch_save_path=save_dir_path,
         batch_id=process_id
     )
 
@@ -175,16 +145,13 @@ def run_full_wasserstein_test(
     t, wasserstein_distances = compute_wasserstein_distance_from_batches(paths_batches_mjp, paths_batches_sde)
 
     if delete_batches:
-        for file in paths_batches_mjp + paths_batches_sde:
-            os.remove(file)
-
-    run_name = f"ws_dist_{name_rate_type}_{ws_params.network_params['network_name'].decode()}"
+        for entry in paths_batches_mjp + paths_batches_sde:
+            os.remove(entry)
 
     # Saving Results
     save_wasserstein_result(
-        os.path.join(path_save_dir, run_name+".hdf5"),
+        os.path.join(save_dir_path, ws_params.run_name+".hdf5"),
         ws_params,
-        params,
         wasserstein_distances,
         t
     )
@@ -195,7 +162,6 @@ def run_full_wasserstein_test(
 def save_wasserstein_result(
         path: str | os.PathLike,
         ws_params: WassersteinParameters,
-        cnvm_params: CNVMParameters,
         error_trajectory: np.ndarray,
         time_trajectory: np.ndarray
 ):
@@ -203,14 +169,14 @@ def save_wasserstein_result(
         path += ".hdf5"
 
 
-    with h5py.File(path, "w") as file:
-        ws_dist_group = file.create_group("wasserstein_distance")
+    with h5py.File(path, "w") as save_file:
+        ws_dist_group = save_file.create_group("wasserstein_distance")
 
         ws_dist_group.attrs["rate_type"] = ws_params.rate_type
         ws_dist_group.attrs["n_states"] = ws_params.n_states
         for attribute in ws_params.network_params.keys():
             ws_dist_group.attrs[attribute] = ws_params.network_params[attribute]
-        ws_dist_group.attrs["params_str"] = str(cnvm_params)
+        ws_dist_group.attrs["params_str"] = str(ws_params.cnvm_params)
         ws_dist_group.attrs["n_runs_sde"] = ws_params.n_runs_sde
         ws_dist_group.attrs["n_runs_mjp"] = ws_params.n_runs_mjp
         ws_dist_group.attrs["sde_simulation_resolution"] = ws_params.simulation_resolution_sde
