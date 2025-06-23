@@ -9,8 +9,6 @@ import networkx as nx
 from .parameter_utils import *
 
 
-
-
 def get_batchsizes(
 		n_total_runs: int,
 		batchsize: int
@@ -32,8 +30,10 @@ def save_batch(
 		trajectories: np.ndarray,
 		overwrite: bool=False
 ):
-	if not overwrite and os.path.exists(save_path):
-		np.savez_compressed(save_path, t=time_traj, x=trajectories)
+	if os.path.exists(save_path) and not overwrite:
+		return
+
+	np.savez_compressed(save_path, t=time_traj, x=trajectories)
 
 	return
 
@@ -42,10 +42,9 @@ def compute_mjp_batch(
 		comp_params: WassersteinParameters,
 		cv
 ):
-
 	t, x = sample_many_runs(
 		params=comp_params.cnvm_params,
-		initial_states=np.array(comp_params.network_init),
+		initial_states=np.array([comp_params.network_init]),
 		t_max=comp_params.t_max,
 		num_timesteps=comp_params.save_resolution * comp_params.t_max + 1,
 		num_runs=comp_params.batchsize_mjp,

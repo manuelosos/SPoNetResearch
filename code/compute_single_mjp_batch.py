@@ -1,7 +1,6 @@
-
-from utils.computation_utils import *
-from utils.network_utils import *
-from utils.parameter_utils import *
+from utils.computation_utils import  save_batch, compute_mjp_batch
+from utils.parameter_utils import WassersteinParameters, standard_ws_from_network_and_rate_type
+from sponet.collective_variables import OpinionShares
 import os
 import argparse
 
@@ -63,3 +62,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     ws_params = standard_ws_from_network_and_rate_type(args.n_states, args.rate_type, args.network_path)
+
+    compute_single_mjp_batch(ws_params, "", args.batch_id)

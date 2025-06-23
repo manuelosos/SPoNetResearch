@@ -71,6 +71,7 @@ def standard_ws_from_network_and_rate_type(
 		simulation_resolution_sde=20
 	)
 
+
 def _get_parameter_set(
 		transition_rate_matrix_monadic: np.ndarray,
 		transition_rate_matrix_dyadic: np.ndarray,
