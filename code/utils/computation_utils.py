@@ -1,12 +1,9 @@
 from typing import List
 import numpy as np
-from dataclasses import dataclass
-from .network_utils import create_equal_network_init_and_shares
 from sponet.collective_variables import OpinionShares
 from sponet import sample_many_runs, CNVM, CNVMParameters, sample_cle
 import os
-import networkx as nx
-from .parameter_utils import *
+from .parameter_utils import WassersteinParameters
 
 
 def get_batchsizes(
@@ -48,21 +45,20 @@ def compute_mjp_batch(
 		t_max=comp_params.t_max,
 		num_timesteps=comp_params.save_resolution * comp_params.t_max + 1,
 		num_runs=comp_params.batchsize_mjp,
-		collective_variable=cv
+		collective_variable=cv,
+		n_jobs=-1
 	)
 
 	return t, x
 
 
 def compute_sde_batch(
-		cnvm_params: CNVMParameters,
 		comp_params: WassersteinParameters,
-		initial_shares: np.ndarray,
 ):
 
 	t, x = sample_cle(
-		params=cnvm_params,
-		initial_state=initial_shares,
+		params=comp_params.cnvm_params,
+		initial_state=comp_params.initial_rel_shares[0],
 		max_time=comp_params.t_max,
 		num_time_steps=comp_params.t_max * comp_params.simulation_resolution_sde * comp_params.save_resolution,
 		num_samples=comp_params.batchsize_sde,
@@ -82,7 +78,8 @@ def compute_mjp_sde_runs(
 
 	cv = OpinionShares(comp_params.n_states, normalize=True)
 
-	x_init_shares = cv(np.array([comp_params.init_network]))
+
+
 
 	batches_mjp = get_batchsizes(comp_params.n_runs_mjp, comp_params.batchsize_mjp)
 	paths_batches_mjp = []
@@ -95,10 +92,11 @@ def compute_mjp_sde_runs(
 			cv=cv
 		)
 
-		batch_save_path = os.path.join(batch_save_path, f"{batch_id}_batch_{i}_mjp.npz")
-		paths_batches_mjp.append(batch_save_path)
+		batch_path = os.path.join(batch_save_path, f"{batch_id}_batch_{i}_mjp.npz")
 
-		save_batch(batch_save_path, t, x[0], overwrite)
+		paths_batches_mjp.append(batch_path)
+
+		save_batch(batch_path, t, x[0], overwrite)
 
 		if verbose:
 			print(f"Finished batch {i} with {n_runs} and batch id {batch_id} runs of MJP simulation.")
@@ -114,15 +112,14 @@ def compute_mjp_sde_runs(
 	for i, n_runs in enumerate(batches_sde):
 
 		t, x = compute_sde_batch(
-			cnvm_params=comp_params.cnvm_params,
-			comp_params=comp_params,
-			initial_shares=x_init_shares[0]
+			comp_params=comp_params
 		)
 
-		batch_save_path = os.path.join(batch_save_path, f"{batch_id}_batch_{i}_sde.npz")
-		paths_batches_sde.append(batch_save_path)
 
-		save_batch(batch_save_path, t, x, overwrite)
+		batch_path = os.path.join(batch_save_path, f"{batch_id}_batch_{i}_sde.npz")
+		paths_batches_sde.append(batch_path)
+
+		save_batch(batch_path, t, x, overwrite)
 
 		if verbose:
 			print(f"Finished batch {i} with {n_runs} runs and batch id {batch_id} of SDE simulation.")

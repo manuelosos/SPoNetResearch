@@ -1,15 +1,14 @@
 import datetime
-import h5py
-
+from typing import List
 import scipy as sp
-from utils.parameter_utils import *
-from utils.computation_utils import *
-from utils.network_utils import *
+from utils.parameter_utils import WassersteinParameters, standard_ws_from_network_and_rate_type
+from utils.computation_utils import compute_mjp_sde_runs
+import h5py
 import json
+import numpy as np
+
 import os
 import argparse
-from dataclasses import dataclass
-import networkx as nx
 
 
 # Load file containing all relevant paths for file saving and loading
@@ -196,6 +195,16 @@ def standard_wasserstein_test(
 
 ):
 
+    save_path = save_path_results
+
+    ws_params = standard_ws_from_network_and_rate_type(
+        n_states=n_states,
+        rate_type=rate_type,
+        network_save_path=network_save_path,
+    )
+
+    run_full_wasserstein_test(ws_params, save_path=save_path, delete_batches=True)
+
     return
 
 
@@ -215,7 +224,7 @@ def main():
             "tmp"
         )
     else:
-        pass
+       pass
     return
 
 

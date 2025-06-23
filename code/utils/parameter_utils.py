@@ -1,12 +1,8 @@
 from typing import Callable
-from .computation_utils import *
-import sponet
 from sponet import CNVMParameters
-from sponet.network_generator import NetworkGenerator
 import networkx as nx
 import numpy as np
-from .network_utils import read_network
-import os
+from .network_utils import read_network, create_equal_network_init_and_shares
 from dataclasses import dataclass
 
 
@@ -63,10 +59,10 @@ def standard_ws_from_network_and_rate_type(
 		network=network,
 		network_params=network_params,
 		t_max=200,
-		n_runs_mjp=1000000,
-		n_runs_sde=1000000,
-		batchsize_mjp=10000,
-		batchsize_sde=100000,
+		n_runs_mjp=1_000_000,
+		n_runs_sde=1_000_000,
+		batchsize_mjp=10_000,
+		batchsize_sde=100_000,
 		save_resolution=2,
 		simulation_resolution_sde=20
 	)

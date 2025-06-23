@@ -1,6 +1,5 @@
 from typing import Tuple
 import re
-from scipy.io import mmread
 import numpy as np
 from sponet.collective_variables import OpinionShares
 from sponet.network_generator import NetworkGenerator
