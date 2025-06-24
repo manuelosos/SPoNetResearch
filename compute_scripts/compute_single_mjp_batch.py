@@ -1,5 +1,5 @@
-from utils.computation_utils import  save_batch, compute_mjp_batch
-from utils.parameter_utils import WassersteinParameters, standard_ws_from_network_and_rate_type
+from code.utils.computation_utils import save_batch, compute_mjp_batch
+from code.utils.parameter_utils import WassersteinParameters, standard_ws_from_network_and_rate_type
 from sponet.collective_variables import OpinionShares
 import os
 import argparse

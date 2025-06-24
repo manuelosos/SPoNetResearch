@@ -35,6 +35,7 @@ def get_available_networks(
 	return network_path_list
 
 
+
 def create_array_parameter_file(
 	rate_type: str,
 	n_states: int,
@@ -42,6 +43,9 @@ def create_array_parameter_file(
 ):
 
 	network_paths = get_available_networks(network_path)
+
+
+
 
 	with open("parameters/ws_distance_parameters.txt", "w") as f:
 		for network_path in network_paths:
