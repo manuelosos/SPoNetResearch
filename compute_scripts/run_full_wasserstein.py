@@ -113,7 +113,7 @@ def standard_wasserstein_test(
 
 ):
 
-	save_path = save_path_results
+	save_path = os.path.join(save_path_results, "ws_distance")
 
 	ws_params = standard_ws_from_network_and_rate_type(
 		n_states=n_states,
