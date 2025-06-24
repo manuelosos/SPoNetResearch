@@ -2,10 +2,10 @@ import json
 import argparse
 import os
 
-from code.utils.parameter_utils import WassersteinParameters, standard_ws_from_network_and_rate_type
-from code.utils.computation_utils import compute_mjp_sde_runs
-from code.wasserstein.wasserstein import compute_wasserstein_distance_from_batches, save_wasserstein_result
-
+from ..utils import parameter_utils
+from ..utils.parameter_utils import WassersteinParameters, standard_ws_from_network_and_rate_type
+from pythoncode.utils.computation_utils import compute_mjp_sde_runs
+from pythoncode.wasserstein.wasserstein import compute_wasserstein_distance_from_batches, save_wasserstein_result
 
 # Load file containing all relevant paths for file saving and loading
 with open("paths.json") as file:

@@ -5,7 +5,7 @@ import datetime
 import os
 import h5py
 
-from code.utils.parameter_utils import WassersteinParameters
+from pythoncode.utils.parameter_utils import WassersteinParameters
 
 
 def load_batches(paths_batches: List[str]) -> tuple[np.ndarray, np.ndarray]:
