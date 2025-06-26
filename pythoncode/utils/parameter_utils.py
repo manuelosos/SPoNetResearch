@@ -91,6 +91,30 @@ def _get_parameter_set(
 	return mjp_params
 
 
+def test_ws_from_network_and_rate_type(
+	n_states: int,
+	rate_type: str,
+	network_save_path: str,
+	) -> WassersteinParameters:
+
+	# Network Initialization
+	network, network_params = read_network(network_save_path)
+
+	return WassersteinParameters(
+		n_states=n_states,
+		rate_type=rate_type,
+		network=network,
+		network_params=network_params,
+		t_max=200,
+		n_runs_mjp=100,
+		n_runs_sde=100,
+		batchsize_mjp=10,
+		batchsize_sde=50,
+		save_resolution=2,
+		simulation_resolution_sde=20
+	)
+
+
 def get_parameter_generator(rate_type: str, n_states: int) -> Callable:
 
 	rate_key = f"{n_states}s_{rate_type}"
