@@ -8,7 +8,11 @@
 #SBATCH --error=/workdir/bt310056/logs/%x_%j.err #Fehlerausgabedatei %x:= jobname,%j:=jobid
 #SBATCH --output=/workdir/bt310056/logs/%x_%j.out
 
-#SBATCH --ntasks=64
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=64
+#SBATCH --hint=nomultithread
+#SBATCH --exclusive
 
 parameter_path="/workdir/bt310056/SPoNetResearch/clusterscripts/parameters/ws_distance_parameters.txt"
 cat ${parameter_path} | grep -v "^#"
