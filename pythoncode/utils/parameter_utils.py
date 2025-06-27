@@ -41,10 +41,11 @@ def standard_ws_from_network_and_rate_type(
 		n_states: int,
 		rate_type: str,
 		network_save_path: str,
+		verbose=False
 ) -> WassersteinParameters:
 
 	# Network Initialization
-	network, network_params = read_network(network_save_path)
+	network, network_params = read_network(network_save_path, verbose=verbose)
 
 	return WassersteinParameters(
 		n_states=n_states,
@@ -88,10 +89,11 @@ def test_ws_from_network_and_rate_type(
 	n_states: int,
 	rate_type: str,
 	network_save_path: str,
+	verbose = True
 	) -> WassersteinParameters:
 
 	# Network Initialization
-	network, network_params = read_network(network_save_path)
+	network, network_params = read_network(network_save_path, verbose=verbose)
 
 	return WassersteinParameters(
 		n_states=n_states,
