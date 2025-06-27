@@ -7,7 +7,7 @@ from numba import njit, prange
 import networkx as nx
 import h5py
 import os
-
+import logging as lg
 
 
 
@@ -44,7 +44,7 @@ def read_network(
 ) -> Tuple[nx.Graph, Dict]:
 
     if verbose:
-        print(f"Reading network from {save_path}")
+        lg.info(f"Reading network from {save_path}")
 
     file = h5py.File(save_path, "r")
 
@@ -54,12 +54,12 @@ def read_network(
     parameters = dict(zip(parameters.keys(), parameters.values()))
 
     if verbose:
-        print(f"Converting adjacency matrix to networkx graph.")
+        lg.info(f"Converting adjacency matrix to networkx graph.")
 
     network = nx.from_numpy_array(np.array(adjacency_matrix))
 
     if verbose:
-        print(f"Finished converting network.")
+        lg.info(f"Finished converting network.")
 
     return network, parameters
 
