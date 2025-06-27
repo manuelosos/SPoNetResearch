@@ -6,13 +6,6 @@ from .network_utils import read_network, create_equal_network_init_and_shares
 from dataclasses import dataclass
 
 
-@dataclass()
-class NetworkParameters:
-	name: str
-	network_model: str
-	n_nodes: int
-
-
 @dataclass
 class WassersteinParameters:
 	n_states: int
@@ -105,8 +98,8 @@ def test_ws_from_network_and_rate_type(
 		rate_type=rate_type,
 		network=network,
 		network_params=network_params,
-		t_max=200,
-		n_runs_mjp=100,
+		t_max=2,
+		n_runs_mjp=40,
 		n_runs_sde=100,
 		batchsize_mjp=10,
 		batchsize_sde=50,
@@ -146,3 +139,5 @@ def cnvm_3s_asymm(
 	)
 
 	return params, x_init_shares, "CNVM_3s_asymm"
+
+

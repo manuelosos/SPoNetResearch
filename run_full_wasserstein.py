@@ -77,7 +77,10 @@ def run_full_wasserstein_test(
 		save_path: str = "",
 		process_id: str = "",
 		delete_batches: bool = True,
+		verbose=False
 ):
+	if verbose:
+		print(f"Starting Wasserstein test {ws_params.run_name}")
 
 	save_dir_path = os.path.join(save_path, ws_params.run_name)
 	if not os.path.isdir(save_dir_path):

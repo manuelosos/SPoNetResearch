@@ -5,8 +5,8 @@
 #SBATCH --mail-type=BEGIN,FAIL,END
 #SBATCH --mail-user=manuel.urban@uni-bayreuth.de
 #SBATCH --chdir=/workdir/bt310056/SPoNetResearch
-#SBATCH --error=/workdir/bt310056/logs/%x_%j.err #Fehlerausgabedatei %x:= jobname,%j:=jobid
-#SBATCH --output=/workdir/bt310056/logs/%x_%j.out
+#SBATCH --error=/workdir/bt310056/logs/%x_%j_%a.err
+#SBATCH --output=/workdir/bt310056/logs/%x_%j_%a.out
 
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -15,8 +15,9 @@
 #SBATCH --exclusive
 
 parameter_path="/workdir/bt310056/SPoNetResearch/clusterscripts/parameters/ws_distance_parameters.txt"
-cat ${parameter_path} | grep -v "^#"
 
 module load gnu/14.1 python/3.12.4
+
 line=${SLURM_ARRAY_TASK_ID}
+
 python3 run_full_wasserstein.py $( cat ${parameter_path}  | grep -v "^#" | sed -ne ${line}p )

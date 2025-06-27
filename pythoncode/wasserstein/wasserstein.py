@@ -1,4 +1,5 @@
-from typing import List
+from typing import List, Dict, Any
+from collections import namedtuple
 import numpy as np
 import scipy as sp
 import datetime
@@ -77,3 +78,32 @@ def save_wasserstein_result(
 		ws_dist_group.create_dataset("t", data=time_trajectory)
 
 	return
+
+
+
+# Optional: a lightweight return type
+WassersteinResult = namedtuple(
+	"WassersteinResult",
+	["attrs", "error_trajectory", "time_trajectory"],
+)
+
+
+def load_wasserstein_result(path: str | os.PathLike) -> WassersteinResult:
+	# Ensure the expected file extension
+	path = os.fspath(path)
+	if not path.endswith(".hdf5"):
+		path += ".hdf5"
+
+	# Open read-only and extract everything you need
+	with h5py.File(path, "r") as h5f:
+		g = h5f["wasserstein_distance"]
+
+		# Copy attributes into a plain Python dict (so the file can close safely)
+		attrs: Dict[str, Any] = {k: g.attrs[k] for k in g.attrs.keys()}
+
+		# Datasets -> NumPy arrays
+		error_trajectory: np.ndarray = g["wasserstein_distance"][()]
+		time_trajectory:  np.ndarray = g["t"][()]
+
+	return WassersteinResult(attrs, error_trajectory, time_trajectory)
+
