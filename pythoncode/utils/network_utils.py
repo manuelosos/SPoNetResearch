@@ -9,6 +9,8 @@ import h5py
 import os
 
 
+
+
 def get_available_networks(
         path: str,
         file_ending: str = ""
@@ -40,8 +42,10 @@ def read_network(
         save_path: str,
         verbose: bool = False
 ) -> Tuple[nx.Graph, Dict]:
+
     if verbose:
         print(f"Reading network from {save_path}")
+
     file = h5py.File(save_path, "r")
 
     adjacency_matrix = file["network"]["adjacency_matrix"]
@@ -49,10 +53,13 @@ def read_network(
     parameters = file["network"].attrs
     parameters = dict(zip(parameters.keys(), parameters.values()))
 
+    if verbose:
+        print(f"Converting adjacency matrix to networkx graph.")
+
     network = nx.from_numpy_array(np.array(adjacency_matrix))
 
     if verbose:
-        print(f"Finished reading network.")
+        print(f"Finished converting network.")
 
     return network, parameters
 
