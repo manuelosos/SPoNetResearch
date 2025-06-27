@@ -44,7 +44,7 @@ def read_network(
 ) -> Tuple[nx.Graph, Dict]:
 
     if verbose:
-        lg.info(f"Reading network from {save_path}")
+        print(f"Reading network from {save_path}")
 
     file = h5py.File(save_path, "r")
 
@@ -54,12 +54,12 @@ def read_network(
     parameters = dict(zip(parameters.keys(), parameters.values()))
 
     if verbose:
-        lg.info(f"Converting adjacency matrix to networkx graph.")
+        print(f"Converting adjacency matrix to networkx graph.")
 
     network = nx.from_numpy_array(np.array(adjacency_matrix))
 
     if verbose:
-        lg.info(f"Finished converting network.")
+        print(f"Finished converting network.")
 
     return network, parameters
 
