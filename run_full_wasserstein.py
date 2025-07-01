@@ -2,8 +2,12 @@ import json
 import argparse
 import os
 
-from ..utils import parameter_utils
-from ..utils.parameter_utils import WassersteinParameters, standard_ws_from_network_and_rate_type
+from pythoncode.utils import parameter_utils
+from pythoncode.utils.parameter_utils import (
+	WassersteinParameters,
+	standard_ws_from_network_and_rate_type,
+	test_ws_from_network_and_rate_type
+)
 from pythoncode.utils.computation_utils import compute_mjp_sde_runs
 from pythoncode.wasserstein.wasserstein import compute_wasserstein_distance_from_batches, save_wasserstein_result
 
@@ -73,7 +77,10 @@ def run_full_wasserstein_test(
 		save_path: str = "",
 		process_id: str = "",
 		delete_batches: bool = True,
+		verbose=False
 ):
+	if verbose:
+		print(f"Starting Wasserstein test {ws_params.run_name}")
 
 	save_dir_path = os.path.join(save_path, ws_params.run_name)
 	if not os.path.isdir(save_dir_path):
@@ -109,17 +116,25 @@ def standard_wasserstein_test(
 		n_states: int,
 		rate_type: str,
 		network_save_path: str,
-		process_id: str
+		test: bool = False,
 
 ):
 
-	save_path = os.path.join(save_path_results, "ws_distance")
 
-	ws_params = standard_ws_from_network_and_rate_type(
-		n_states=n_states,
-		rate_type=rate_type,
-		network_save_path=network_save_path,
-	)
+	if test:
+		ws_params = test_ws_from_network_and_rate_type(
+			n_states,
+			rate_type,
+			network_save_path
+		)
+		save_path = os.path.join(save_path_results, "tests")
+	else:
+		ws_params = standard_ws_from_network_and_rate_type(
+			n_states=n_states,
+			rate_type=rate_type,
+			network_save_path=network_save_path,
+		)
+		save_path = os.path.join(save_path_results, "ws_distance")
 
 	run_full_wasserstein_test(ws_params, save_path=save_path, delete_batches=True)
 
@@ -132,15 +147,12 @@ def main():
 	args = parser.parse_args()
 	test: bool = args.test
 
-	if not test:
-		standard_wasserstein_test(
-			args.n_states,
-			args.rate_type,
-			args.network_path,
-			"tmp"
-		)
-	else:
-		pass
+	standard_wasserstein_test(
+		args.n_states,
+		args.rate_type,
+		args.network_path,
+		test=test,
+	)
 	return
 
 

@@ -84,7 +84,8 @@ def compute_mjp_sde_runs(
 	batches_mjp = get_batchsizes(comp_params.n_runs_mjp, comp_params.batchsize_mjp)
 	paths_batches_mjp = []
 
-	print(f"Starting MJP simulation for {comp_params.n_runs_mjp} in {len(batches_mjp)} batches with batch id {batch_id}.")
+	print(f"Starting MJP simulation for {comp_params.run_name} with {comp_params.n_runs_mjp} runs "
+		  f"in {len(batches_mjp)} batches.")
 	for i, n_runs in enumerate(batches_mjp):
 
 		t, x = compute_mjp_batch(
@@ -99,16 +100,17 @@ def compute_mjp_sde_runs(
 		save_batch(batch_path, t, x[0], overwrite)
 
 		if verbose:
-			print(f"Finished batch {i} with {n_runs} and batch id {batch_id} runs of MJP simulation.")
+			print(f"Finished batch {i} with {n_runs} runs and batch id {batch_id} runs of MJP simulation.")
 
 	if verbose:
-		print("Finished MJP simulation.")
+		print(f"Finished MJP simulation for {comp_params.run_name}.")
 
 
 	batches_sde = get_batchsizes(comp_params.n_runs_sde, comp_params.batchsize_sde)
 	paths_batches_sde = []
 
-	print(f"Starting SDE simulation for {comp_params.n_runs_sde} in {len(batches_sde)} batches with batch_id {batch_id}.")
+	print(f"Starting SDE simulation for {comp_params.run_name} with{comp_params.n_runs_sde} runs "
+		  f"in {len(batches_sde)}.")
 	for i, n_runs in enumerate(batches_sde):
 
 		t, x = compute_sde_batch(
@@ -125,6 +127,6 @@ def compute_mjp_sde_runs(
 			print(f"Finished batch {i} with {n_runs} runs and batch id {batch_id} of SDE simulation.")
 
 	if verbose:
-		print("Finished SDE simulation.")
+		print(f"Finished SDE simulation for {comp_params.run_name}.")
 
 	return paths_batches_mjp, paths_batches_sde

@@ -6,13 +6,6 @@ from .network_utils import read_network, create_equal_network_init_and_shares
 from dataclasses import dataclass
 
 
-@dataclass()
-class NetworkParameters:
-	name: str
-	network_model: str
-	n_nodes: int
-
-
 @dataclass
 class WassersteinParameters:
 	n_states: int
@@ -41,17 +34,18 @@ class WassersteinParameters:
 			create_equal_network_init_and_shares(initial_rel_shares, self.network_params["n_nodes"])
 		)
 
-		self.run_name: str = f"ws_dist_{self.n_states}s_{self.rate_type}_{self.network_params['network_name'].decode()}"
+		self.run_name: str = f"ws_dist_CNVM_{self.n_states}s_{self.rate_type}_{self.network_params['network_name'].decode()}"
 
 
 def standard_ws_from_network_and_rate_type(
 		n_states: int,
 		rate_type: str,
 		network_save_path: str,
+		verbose=False
 ) -> WassersteinParameters:
 
 	# Network Initialization
-	network, network_params = read_network(network_save_path)
+	network, network_params = read_network(network_save_path, verbose=verbose)
 
 	return WassersteinParameters(
 		n_states=n_states,
@@ -91,6 +85,31 @@ def _get_parameter_set(
 	return mjp_params
 
 
+def test_ws_from_network_and_rate_type(
+	n_states: int,
+	rate_type: str,
+	network_save_path: str,
+	verbose = True
+	) -> WassersteinParameters:
+
+	# Network Initialization
+	network, network_params = read_network(network_save_path, verbose=verbose)
+
+	return WassersteinParameters(
+		n_states=n_states,
+		rate_type=rate_type,
+		network=network,
+		network_params=network_params,
+		t_max=2,
+		n_runs_mjp=40,
+		n_runs_sde=100,
+		batchsize_mjp=10,
+		batchsize_sde=50,
+		save_resolution=2,
+		simulation_resolution_sde=20
+	)
+
+
 def get_parameter_generator(rate_type: str, n_states: int) -> Callable:
 
 	rate_key = f"{n_states}s_{rate_type}"
@@ -122,3 +141,5 @@ def cnvm_3s_asymm(
 	)
 
 	return params, x_init_shares, "CNVM_3s_asymm"
+
+

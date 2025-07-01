@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Dict
 import re
 import numpy as np
 from sponet.collective_variables import OpinionShares
@@ -8,6 +8,8 @@ import networkx as nx
 import h5py
 import os
 from scipy import sparse as sp_sparse
+import logging as lg
+
 
 
 def get_available_networks(
