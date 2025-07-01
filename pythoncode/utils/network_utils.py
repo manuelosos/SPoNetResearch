@@ -7,6 +7,7 @@ from numba import njit, prange
 import networkx as nx
 import h5py
 import os
+from scipy import sparse as sp_sparse
 
 
 def get_available_networks(
@@ -39,14 +40,27 @@ def get_available_networks(
 def read_network(
         save_path: str
 ):
-    file = h5py.File(save_path, "r")
+    with h5py.File(save_path, "r") as file:
 
-    adjacency_matrix = file["network"]["adjacency_matrix"]
+        parameters = file["network_data"].attrs
+        parameters = dict(zip(parameters.keys(), parameters.values()))
 
-    parameters = file["network"].attrs
-    parameters = dict(zip(parameters.keys(), parameters.values()))
+        print(parameters)
+        if "adjacency_matrix" in file["network_data"].keys():
+            adjacency_matrix = file["network_data"]["adjacency_matrix"]
+            return nx.from_numpy_array(np.array(adjacency_matrix)), parameters
 
-    return nx.from_numpy_array(np.array(adjacency_matrix)), parameters
+        elif "adjacency_matrix_col_ptr" in list(file["network_data"].keys()) and "adjacency_matrix_row_ptr" in list(file["network_data"].keys()):
+
+            col_ptr = np.array(file["network_data"]["adjacency_matrix_col_ptr"])
+            row_ptr = np.array(file["network_data"]["adjacency_matrix_row_ptr"])
+
+            data = np.ones(len(col_ptr), dtype=np.uint8)
+            adj_mat = sp_sparse.csr_matrix((data, col_ptr, row_ptr))
+            return nx.from_scipy_sparse_array(adj_mat), parameters
+
+    raise ValueError("cannot read network")
+
 
 
 def save_network(
@@ -154,16 +168,6 @@ def create_equal_network_init_and_shares(
     return shares, network_state
 
 
-def pre_generate_network(
-    network_gen: NetworkGenerator,
-    save_path: str
-):
-
-    network = network_gen()
-
-    return
-
-
 @njit(parallel=True, cache=True)
 def compute_propensity_difference_trajectory(neighbor_list, x_traj, rel_shares, R):
 
@@ -208,5 +212,4 @@ def compute_propensity_difference(neighbor_list, x, rel_shares, R):
 
 
 if __name__ == "__main__":
-    print(read_network("/home/manuel/Documents/code/SpoNetResearch/juliacode/test.hdf5"))
-
+    print(res :=read_network("/home/manuel/Documents/code/data/test_data/ER_n5_p-crit-5.hdf5"))

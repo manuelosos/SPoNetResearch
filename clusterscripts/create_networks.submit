@@ -7,6 +7,12 @@
 #SBATCH --error=/workdir/bt310056/logs/network_creation_%x_%j.err
 #SBATCH --output=/workdir/bt310056/logs/network_creation_%x_%j.out
 
-#SBATCH --ntasks=64
+
+#SBATCH --ntasks=1
+#SBATCH --nodes=2
+#SBATCH --hint=nomultithread
+#SBATCH --exclusive
+
+
 module load julia
-julia -p 20 --project=. generate_graphs.jl
+julia -p 45 --project=. generate_graphs.jl /workdir/bt310056/data/networks/
