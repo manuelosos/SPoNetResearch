@@ -14,7 +14,7 @@ import logging as lg
 
 def get_available_networks(
         path: str,
-        file_ending: str = ""
+        file_ending: str = ".hdf5"
 ) -> list[str]:
     """
     Returns a list of all available networks in a directory with absolute paths.
@@ -34,20 +34,38 @@ def get_available_networks(
         if os.path.isdir(os.path.join(path, entry)):
             continue
         if entry.endswith(file_ending):
-            return_list.append(entry)
+            return_list.append(os.path.join(path, entry))
 
     return return_list
 
 
+def get_available_network_params(path: str):
+    network_paths = get_available_networks(path)
+
+    parameter_list = []
+    for network_path in network_paths:
+        try:
+            parameter_list.append(read_network(network_path, return_only_parameters=True))
+        except OSError:
+            print(f"Could not read {network_path}")
+            continue
+
+    return parameter_list
+
+
 def read_network(
-        save_path: str
+        save_path: str,
+        return_only_parameters: bool = False
 ):
     with h5py.File(save_path, "r") as file:
 
+        print(save_path)
         parameters = file["network_data"].attrs
         parameters = dict(zip(parameters.keys(), parameters.values()))
 
-        print(parameters)
+        if return_only_parameters:
+            return parameters
+
         if "adjacency_matrix" in file["network_data"].keys():
             adjacency_matrix = file["network_data"]["adjacency_matrix"]
             return nx.from_numpy_array(np.array(adjacency_matrix)), parameters
