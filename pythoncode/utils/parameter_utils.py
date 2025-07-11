@@ -93,7 +93,7 @@ def test_ws_from_network_and_rate_type(
 	) -> WassersteinParameters:
 
 	# Network Initialization
-	network, network_params = read_network(network_save_path, verbose=verbose)
+	network, network_params = read_network(network_save_path)
 
 	return WassersteinParameters(
 		n_states=n_states,

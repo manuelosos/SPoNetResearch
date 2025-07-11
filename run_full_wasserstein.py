@@ -48,7 +48,7 @@ network_parameters.add_argument(
 	type=float,
 	default=None,
 	help="Probability p for which an edge exists in the G(n,p) model. "
-	     "Set to 1 to use fully connected network."
+	     "Set to 1 to use fully connected network. "
 	     "Defaults to None"
 )
 computation_parameters = parser.add_argument_group("Computation Parameters")
@@ -138,9 +138,9 @@ def standard_wasserstein_test(
 			network_save_path=network_save_path,
 		)
 
-		result_save_path = os.path.join(result_save_path, f"ws_distance/{rate_type}_{n_states}")
-		os.makedirs(result_save_path, exist_ok=True)
-
+	result_save_path = os.path.join(result_save_path, f"ws_distance/{rate_type}_{n_states}")
+	os.makedirs(result_save_path, exist_ok=True)
+	print("Saving results to", result_save_path)
 	run_full_wasserstein_test(ws_params, save_path=result_save_path, delete_batches=True)
 
 	return
