@@ -59,7 +59,6 @@ def read_network(
 ):
     with h5py.File(save_path, "r") as file:
 
-        print(save_path)
         parameters = file["network_data"].attrs
         parameters = dict(zip(parameters.keys(), parameters.values()))
 

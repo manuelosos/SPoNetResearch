@@ -45,7 +45,7 @@ def standard_ws_from_network_and_rate_type(
 ) -> WassersteinParameters:
 
 	# Network Initialization
-	network, network_params = read_network(network_save_path, verbose=verbose)
+	network, network_params = read_network(network_save_path)
 
 	return WassersteinParameters(
 		n_states=n_states,
@@ -115,7 +115,12 @@ def get_parameter_generator(rate_type: str, n_states: int) -> Callable:
 	rate_key = f"{n_states}s_{rate_type}"
 
 	function_dict = {
+		"2s_symm": cnvm_2s_symmetric,
 		"3s_asymm": cnvm_3s_asymm,
+		"3s_symm": cnvm_3s_symmetric,
+		"3s_almost-symm": cnvm_3s_almost_symm,
+
+
 	}
 
 	return function_dict[rate_key]
@@ -143,3 +148,57 @@ def cnvm_3s_asymm(
 	return params, x_init_shares, "CNVM_3s_asymm"
 
 
+def cnvm_3s_almost_symm(network: nx.Graph):
+
+	R = np.array([[0, 1, 0.99],
+	              [0.99, 0, 1],
+	              [1, 0.99, 0]])
+	Rt = np.array([[0, 0.01, 0.01],
+	               [0.01, 0, 0.01],
+	               [0.01, 0.01, 0]])
+
+	x_init_shares = np.array([0.2, 0.3, 0.5])
+
+	params = _get_parameter_set(
+		transition_rate_matrix_monadic=Rt,
+		transition_rate_matrix_dyadic=R,
+		network=network
+
+	)
+	return params, x_init_shares, "CNVM_3s_almost-symm"
+
+
+def cnvm_3s_symmetric(network: nx.Graph):
+	R = np.array([[0, 1, 1],
+	              [1, 0, 1],
+	              [1, 1, 0]])
+	Rt = np.array([[0, 0.01, 0.01],
+	               [0.01, 0, 0.01],
+	               [0.01, 0.01, 0]])
+
+	x_init_shares = np.array([1/3, 1/3, 1/3])
+
+	params = _get_parameter_set(
+		transition_rate_matrix_monadic=Rt,
+		transition_rate_matrix_dyadic=R,
+		network=network
+
+	)
+	return params, x_init_shares, "CNVM_3s_symm"
+
+
+def cnvm_2s_symmetric(network: nx.Graph):
+	R = np.array([[0, 1],
+	              [1, 0]])
+	Rt = np.array([[0, 0.01],
+	               [0.01, 0]])
+
+	x_init_shares = np.array([1/2, 1/2])
+
+	params = _get_parameter_set(
+		transition_rate_matrix_monadic=Rt,
+		transition_rate_matrix_dyadic=R,
+		network=network
+
+	)
+	return params, x_init_shares, "CNVM_2s_symm"

@@ -11,12 +11,6 @@ from pythoncode.utils.parameter_utils import (
 from pythoncode.utils.computation_utils import compute_mjp_sde_runs
 from pythoncode.wasserstein.wasserstein import compute_wasserstein_distance_from_batches, save_wasserstein_result
 
-# Load file containing all relevant paths for file saving and loading
-with open("paths.json") as file:
-	path_data = json.load(file)
-
-data_path = path_data.get("data_path", "")
-save_path_results = path_data.get("save_path_results", "")
 
 # Command Line Arguments ###############################################################################################
 parser = argparse.ArgumentParser(
@@ -70,11 +64,18 @@ computation_parameters.add_argument(
 	action="store_true",
 	help="Set to test the script"
 )
+save_parameters = parser.add_argument_group("Save Parameters")
+save_parameters.add_argument(
+	"--result_save_path",
+	type=str,
+	default=".",
+	help="Path to a directory where results will be saved."
+)
 
 
 def run_full_wasserstein_test(
 		ws_params: WassersteinParameters,
-		save_path: str = "",
+		save_path: str = ".",
 		process_id: str = "",
 		delete_batches: bool = True,
 		verbose=False
@@ -85,7 +86,6 @@ def run_full_wasserstein_test(
 	save_dir_path = os.path.join(save_path, ws_params.run_name)
 	if not os.path.isdir(save_dir_path):
 		os.mkdir(save_dir_path)
-
 
 	# Trajectory computation
 	paths_batches_mjp, paths_batches_sde = compute_mjp_sde_runs(
@@ -103,7 +103,7 @@ def run_full_wasserstein_test(
 
 	# Saving Results
 	save_wasserstein_result(
-		os.path.join(save_dir_path, ws_params.run_name+".hdf5"),
+		os.path.join(save_dir_path, ws_params.run_name + ".hdf5"),
 		ws_params,
 		wasserstein_distances,
 		t
@@ -116,10 +116,13 @@ def standard_wasserstein_test(
 		n_states: int,
 		rate_type: str,
 		network_save_path: str,
+		result_save_path: str = ".",
 		test: bool = False,
 
 ):
 
+	if not os.path.exists(result_save_path):
+		raise FileNotFoundError(result_save_path)
 
 	if test:
 		ws_params = test_ws_from_network_and_rate_type(
@@ -127,22 +130,23 @@ def standard_wasserstein_test(
 			rate_type,
 			network_save_path
 		)
-		save_path = os.path.join(save_path_results, "tests")
+		result_save_path = os.path.join(result_save_path, "tests")
 	else:
 		ws_params = standard_ws_from_network_and_rate_type(
 			n_states=n_states,
 			rate_type=rate_type,
 			network_save_path=network_save_path,
 		)
-		save_path = os.path.join(save_path_results, "ws_distance")
 
-	run_full_wasserstein_test(ws_params, save_path=save_path, delete_batches=True)
+		result_save_path = os.path.join(result_save_path, f"ws_distance/{rate_type}_{n_states}")
+		os.makedirs(result_save_path, exist_ok=True)
+
+	run_full_wasserstein_test(ws_params, save_path=result_save_path, delete_batches=True)
 
 	return
 
 
 def main():
-
 	#  Argument Parsing ##########
 	args = parser.parse_args()
 	test: bool = args.test
@@ -151,6 +155,7 @@ def main():
 		args.n_states,
 		args.rate_type,
 		args.network_path,
+		result_save_path=args.result_save_path,
 		test=test,
 	)
 	return

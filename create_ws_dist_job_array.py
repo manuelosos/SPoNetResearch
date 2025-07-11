@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 import os
 import os.path as osp
-
+from pythoncode.utils.network_utils import read_network
 parser = argparse.ArgumentParser(
 	description="Creates a .txt file containing parameters for a job array executing wassersteindistancetest.py for "
 	            "given parameters on available networks."
@@ -23,6 +23,13 @@ parser.add_argument(
 	help="Path to a dir where networks are saved."
 )
 
+parser.add_argument(
+	"--save_path",
+	type=str,
+	help="Path to dir where the paramter file should be saved.",
+	default="."
+)
+
 
 def get_available_networks(
 		path: str | os.PathLike,
@@ -39,17 +46,21 @@ def get_available_networks(
 def create_array_parameter_file(
 	rate_type: str,
 	n_states: int,
-	network_path: str | os.PathLike
+	network_path: str | os.PathLike,
+	save_path: str | os.PathLike,
 ):
 
 	network_paths = get_available_networks(network_path)
 
-
-
-
-	with open("parameters/ws_distance_parameters.txt", "w") as f:
+	counter = 0
+	with open(os.path.join(save_path, "ws_distance_parameters.txt"), "w") as f:
 		for network_path in network_paths:
+			parameters = read_network(network_path, return_only_parameters=True)
+			if parameters["n_nodes"] >= 50_000:
+				continue
+			counter += 1
 			f.write(f"{rate_type} {n_states} --network_path={network_path}\n")
+
 	print(f"created {len(network_paths)} jobs.")
 
 
@@ -63,6 +74,7 @@ def main():
 		args.rate_type,
 		args.n_states,
 		args.network_path,
+		args.save_path
 	)
 	return
 

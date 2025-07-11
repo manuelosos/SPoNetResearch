@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-with open("compute_scripts/paths.json") as file:
+with open("../paths.json") as file:
     data = json.load(file)
 data_path = data.get("data_path")
 
