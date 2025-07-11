@@ -1,5 +1,4 @@
 import argparse
-import numpy as np
 import os
 import os.path as osp
 from pythoncode.utils.network_utils import read_network
@@ -22,11 +21,16 @@ parser.add_argument(
 	type=str,
 	help="Path to a dir where networks are saved."
 )
+parser.add_argument(
+	"result_save_path",
+	type=str,
+	help="Path to the directory where results of Wasserstein tests are saved."
+)
 
 parser.add_argument(
 	"--save_path",
 	type=str,
-	help="Path to dir where the paramter file should be saved.",
+	help="Path to dir where the parameter file should be saved.",
 	default="."
 )
 
@@ -47,6 +51,7 @@ def create_array_parameter_file(
 	rate_type: str,
 	n_states: int,
 	network_path: str | os.PathLike,
+	result_save_path: str | os.PathLike,
 	save_path: str | os.PathLike,
 ):
 
@@ -59,7 +64,7 @@ def create_array_parameter_file(
 			if parameters["n_nodes"] >= 50_000:
 				continue
 			counter += 1
-			f.write(f"{rate_type} {n_states} --network_path={network_path}\n")
+			f.write(f"{rate_type} {n_states} --network_path={network_path}\n --result_save_path={result_save_path}\n")
 
 	print(f"created {len(network_paths)} jobs.")
 
@@ -74,7 +79,9 @@ def main():
 		args.rate_type,
 		args.n_states,
 		args.network_path,
+		args.result_save_path,
 		args.save_path
+
 	)
 	return
 
