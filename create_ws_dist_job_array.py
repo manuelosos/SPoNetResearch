@@ -64,7 +64,7 @@ def create_array_parameter_file(
 			if parameters["n_nodes"] >= 50_000:
 				continue
 			counter += 1
-			f.write(f"{rate_type} {n_states} --network_path={network_path}\n --result_save_path={result_save_path}\n")
+			f.write(f"{rate_type} {n_states} --network_path={network_path} --result_save_path={result_save_path}\n")
 
 	print(f"created {len(network_paths)} jobs.")
 
