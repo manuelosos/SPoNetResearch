@@ -71,7 +71,7 @@ def compute_sde_batch(
 def compute_mjp_sde_runs(
 		comp_params: WassersteinParameters,
 		batch_save_path: str = "",
-		verbose = True,
+		verbose = False,
 		batch_id: str = "",
 		overwrite: bool = False
 ) -> tuple[List[str], List[str]]:

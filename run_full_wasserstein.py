@@ -1,8 +1,6 @@
-import json
 import argparse
 import os
 
-from pythoncode.utils import parameter_utils
 from pythoncode.utils.parameter_utils import (
 	WassersteinParameters,
 	standard_ws_from_network_and_rate_type,
@@ -91,7 +89,8 @@ def run_full_wasserstein_test(
 	paths_batches_mjp, paths_batches_sde = compute_mjp_sde_runs(
 		comp_params=ws_params,
 		batch_save_path=save_dir_path,
-		batch_id=process_id
+		batch_id=process_id,
+		verbose=verbose
 	)
 
 	# Computation of Wasserstein distance
@@ -140,8 +139,8 @@ def standard_wasserstein_test(
 
 	result_save_path = os.path.join(result_save_path, f"ws_distance/{rate_type}_{n_states}")
 	os.makedirs(result_save_path, exist_ok=True)
-	print("Saving results to", result_save_path)
-	run_full_wasserstein_test(ws_params, save_path=result_save_path, delete_batches=True)
+	print(f"Saving results of {ws_params.run_name} to", result_save_path)
+	run_full_wasserstein_test(ws_params, save_path=result_save_path, delete_batches=True, verbose=True)
 
 	return
 

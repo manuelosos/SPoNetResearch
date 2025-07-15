@@ -58,7 +58,7 @@ def create_array_parameter_file(
 	network_paths = get_available_networks(network_path)
 
 	counter = 0
-	with open(os.path.join(save_path, "ws_distance_parameters.txt"), "w") as f:
+	with open(os.path.join(save_path, f"ws_test_parameters_{rate_type}_{n_states}s.txt"), "w") as f:
 		for network_path in network_paths:
 			parameters = read_network(network_path, return_only_parameters=True)
 			if parameters["n_nodes"] >= 50_000:
