@@ -1,7 +1,9 @@
 import argparse
 import os
 import os.path as osp
+import re
 from pythoncode.utils.network_utils import read_network
+
 parser = argparse.ArgumentParser(
 	description="Creates a .txt file containing parameters for a job array executing wassersteindistancetest.py for "
 	            "given parameters on available networks."
@@ -61,7 +63,9 @@ def create_array_parameter_file(
 	with open(os.path.join(save_path, f"ws_test_parameters_{rate_type}_{n_states}s.txt"), "w") as f:
 		for network_path in network_paths:
 			parameters = read_network(network_path, return_only_parameters=True)
-			if parameters["n_nodes"] >= 50_000:
+			if parameters["n_nodes"] > 10_000:
+				continue
+			if not bool(re.search(r'\b(10|50)(0*)\b', parameters["edge_probability_name"].decode())):
 				continue
 			counter += 1
 			f.write(f"{rate_type} {n_states} --network_path={network_path} --result_save_path={result_save_path}\n")
