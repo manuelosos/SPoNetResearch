@@ -6,7 +6,7 @@ from pythoncode.utils.parameter_utils import (
 	standard_ws_from_network_and_rate_type,
 	test_ws_from_network_and_rate_type
 )
-from pythoncode.utils.computation_utils import compute_mjp_sde_runs
+from pythoncode.utils.computation_utils import compute_batched_mjp_sde_runs
 from pythoncode.wasserstein.wasserstein import compute_wasserstein_distance_from_batches, save_wasserstein_result
 
 
@@ -86,7 +86,7 @@ def run_full_wasserstein_test(
 		os.mkdir(save_dir_path)
 
 	# Trajectory computation
-	paths_batches_mjp, paths_batches_sde = compute_mjp_sde_runs(
+	paths_batches_mjp, paths_batches_sde = compute_batched_mjp_sde_runs(
 		comp_params=ws_params,
 		batch_save_path=save_dir_path,
 		batch_id=process_id,

@@ -1,14 +1,13 @@
 from typing import Tuple, Dict
+from dataclasses import dataclass
 import re
 import numpy as np
 from sponet.collective_variables import OpinionShares
-from sponet.network_generator import NetworkGenerator
 from numba import njit, prange
 import networkx as nx
 import h5py
 import os
 from scipy import sparse as sp_sparse
-import logging as lg
 
 
 

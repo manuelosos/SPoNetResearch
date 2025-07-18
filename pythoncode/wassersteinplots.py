@@ -1,14 +1,11 @@
 import json
+import seaborn as sns
+import re
 import h5py
 import os.path as osp
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-
-
-with open("../paths.json") as file:
-    data = json.load(file)
-data_path = data.get("data_path")
 
 
 def read_wasserstein_results(
@@ -60,11 +57,18 @@ def plot_wasserstein_distance_vs_n_nodes_and_edge_probability():
 
     path = "/home/manuel/Documents/code/data/ws_distance/ws_distance/asymm_3/"
 
+
     t, trajectories, parameter_list = read_wasserstein_results(path)
+    ref_params = parameter_list[0]
+    unique_edge_probability_names = np.unique(
+        np.array([params["edge_probability_name"].decode() if
+                  bool(re.search(
+                      r'\b(10|50)(0*)\b',
+                      params["edge_probability_name"].decode()
+                  )) else "" for params in parameter_list
+                  ]))
 
-
-    unique_edge_probability_names = np.unique(np.array([params["edge_probability_name"].decode() for params in parameter_list]))
-
+    unique_edge_probability_names = np.delete(unique_edge_probability_names, unique_edge_probability_names == "")
 
     plot_trajs = dict()
     for edge_prob_name in unique_edge_probability_names:
@@ -74,14 +78,19 @@ def plot_wasserstein_distance_vs_n_nodes_and_edge_probability():
 
     for traj, params in zip(trajectories, parameter_list):
 
+        if not bool(re.search(
+                      r'\b(10|50)(0*)\b',
+                      params["edge_probability_name"].decode()
+        )):
+            continue
+
         edge_prob_name = params["edge_probability_name"].decode()
         plot_trajs[edge_prob_name][0].append(np.linalg.norm(traj, np.inf))
         plot_trajs[edge_prob_name][1].append(params["n_nodes"])
 
 
     error_bound_proven = lambda x: np.log(x)/np.sqrt(x)
-    error_bound_fitting = lambda x: np.log(x)/x
-
+    error_bound_fitting = lambda x: 1/x*9
 
     x_err_bound = np.linspace(10, 50_000)
 
@@ -89,8 +98,8 @@ def plot_wasserstein_distance_vs_n_nodes_and_edge_probability():
 
     fig, ax = plt.subplots(constrained_layout=True)
 
-    ax.plot(x_err_bound, error_bound_proven(x_err_bound) ,label=r"$\frac{\log(N)}{\sqrt{N}}$")
-    ax.plot(x_err_bound[:3], error_bound_fitting(x_err_bound)[:3] ,label=r"$\frac{\log(N)}{\sqrt{N}}$")
+    ax.plot(x_err_bound, error_bound_proven(x_err_bound), label=r"$\frac{\log(N)}{\sqrt{N}}$")
+    ax.plot(x_err_bound[:3], error_bound_fitting(x_err_bound)[:3], label=r"$\frac{9}{N}$")
 
     for edge_prob_name in unique_edge_probability_names:
         traj = np.array(plot_trajs[edge_prob_name][0])
@@ -102,7 +111,17 @@ def plot_wasserstein_distance_vs_n_nodes_and_edge_probability():
 
     ax.set_xscale("log")
     ax.set_yscale("log")
-    fig.legend(ncol=3)
+    ax.grid(True)
+    ax.set_xlabel("N nodes")
+    ax.set_ylabel("Wasserstein error of marginal distributions with respect to time")
+
+    fig.suptitle(f"Wasserstein distance {ref_params["rate_type"]} {ref_params["n_states"]}s")
+    fig.legend(title="Edge Probabilities", ncol=1)
+
+    plt.savefig(fig.get_suptitle()+".pdf")
+
+    print(ref_params)
+
 
     fig.show()
 
@@ -127,7 +146,7 @@ def plot_wasserstein_distance_vs_n_nodes_and_edge_probability():
 def read_run(
         path: str
 ):
-    
+
     with h5py.File(path, "r") as f:
         result = f["wasserstein_distance"]
 

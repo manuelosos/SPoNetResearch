@@ -68,18 +68,33 @@ def compute_sde_batch(
 	return t, x
 
 
-def compute_mjp_sde_runs(
+def compute_single_mjp_sde_batch(
+		comp_params: WassersteinParameters,
+):
+	cv = OpinionShares(comp_params.n_states, normalize=True)
+
+	t_mjp, x_mjp = compute_mjp_batch(
+		comp_params=comp_params,
+		cv=cv
+	)
+
+	t_sde, x_sde = compute_sde_batch(
+		comp_params=comp_params
+	)
+
+	return t_mjp, x_mjp[0], t_sde, x_sde
+
+
+def compute_batched_mjp_sde_runs(
 		comp_params: WassersteinParameters,
 		batch_save_path: str = "",
-		verbose = False,
 		batch_id: str = "",
-		overwrite: bool = False
+		overwrite: bool = False,
+		verbose = False,
+
 ) -> tuple[List[str], List[str]]:
 
 	cv = OpinionShares(comp_params.n_states, normalize=True)
-
-
-
 
 	batches_mjp = get_batchsizes(comp_params.n_runs_mjp, comp_params.batchsize_mjp)
 	paths_batches_mjp = []

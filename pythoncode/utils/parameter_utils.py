@@ -33,7 +33,6 @@ class WassersteinParameters:
 		self.initial_rel_shares, self.network_init = (
 			create_equal_network_init_and_shares(initial_rel_shares, self.network_params["n_nodes"])
 		)
-
 		self.run_name: str = f"ws_dist_CNVM_{self.n_states}s_{self.rate_type}_{self.network_params['network_name'].decode()}"
 
 
@@ -41,7 +40,6 @@ def standard_ws_from_network_and_rate_type(
 		n_states: int,
 		rate_type: str,
 		network_save_path: str,
-		verbose=False
 ) -> WassersteinParameters:
 
 	# Network Initialization
@@ -57,6 +55,42 @@ def standard_ws_from_network_and_rate_type(
 		n_runs_sde=1_000_000,
 		batchsize_mjp=10_000,
 		batchsize_sde=100_000,
+		save_resolution=2,
+		simulation_resolution_sde=20
+	)
+
+
+def standard_ws_with_new_network_from_rate_type(
+		n_nodes: int,
+		edge_probability: float,
+		n_states: int,
+		rate_type: str,
+		n_runs: int = 1_000_000,
+		t_max: int = 200,
+		batchsize_mjp: int = 10_000,
+		batchsize_sde: int = 100_000,
+) -> WassersteinParameters:
+
+
+	network = nx.erdos_renyi_graph(n_nodes, edge_probability)
+	network_parameters = {
+		"edge_probability": edge_probability,
+		"edge_probability_name": "no given name",
+		"network_name": f"ER_n{n_nodes}".encode(),
+		"n_nodes": n_nodes,
+		"network_model": "erdos_renyi",
+	}
+
+	return WassersteinParameters(
+		n_states=n_states,
+		rate_type=rate_type,
+		network=network,
+		network_params=network_parameters,
+		t_max=t_max,
+		n_runs_mjp=n_runs,
+		n_runs_sde=n_runs,
+		batchsize_mjp=batchsize_mjp,
+		batchsize_sde=batchsize_sde,
 		save_resolution=2,
 		simulation_resolution_sde=20
 	)
